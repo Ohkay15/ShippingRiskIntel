@@ -10,6 +10,9 @@ import {
   type DocumentKind,
 } from "@/documents/kinds";
 import { DocumentUploadPanel } from "@/documents/document-upload-panel";
+import { ConfirmExtractPanel } from "@/extraction/confirm-extract-panel";
+import { ReviewPanel } from "@/extraction/review-panel";
+import type { FlaggedField } from "@/extraction/gate";
 import { shipmentIntakeSchema, type ShipmentIntake } from "@/schemas/shipment";
 import { StatusBadge } from "@/ui/status-badge";
 import { IntakeSummary } from "./intake-summary";
@@ -24,7 +27,12 @@ export default async function ShipmentPage({
   const { id } = await params;
 
   let record:
-    | { id: string; status: ShipmentStatus; intakeData: ShipmentIntake }
+    | {
+        id: string;
+        status: ShipmentStatus;
+        intakeData: ShipmentIntake;
+        flaggedFields: FlaggedField[] | null;
+      }
     | undefined;
   let documents: {
     id: string;
@@ -39,6 +47,7 @@ export default async function ShipmentPage({
         id: shipments.id,
         status: shipments.status,
         intakeData: shipments.intakeData,
+        flaggedFields: shipments.flaggedFields,
       })
       .from(shipments)
       .where(eq(shipments.id, id))
@@ -50,7 +59,12 @@ export default async function ShipmentPage({
       ? shipmentIntakeSchema.safeParse(row.intakeData)
       : undefined;
     if (row && intake?.success) {
-      record = { id: row.id, status: row.status, intakeData: intake.data };
+      record = {
+        id: row.id,
+        status: row.status,
+        intakeData: intake.data,
+        flaggedFields: row.flaggedFields ?? null,
+      };
       documents = await db
         .select({
           id: shipmentDocuments.id,
@@ -86,6 +100,23 @@ export default async function ShipmentPage({
         shipmentId={record.id}
         action={uploadDocument.bind(null, record.id)}
       />
+
+      {record.status === "draft" && (
+        <ConfirmExtractPanel shipmentId={record.id} />
+      )}
+      {record.status === "extracting" && (
+        <section className="document-panel">
+          <h2>Extracting…</h2>
+          <p className="field-hint">
+            Extraction is running on the attached documents. This page shows
+            the result when it completes; the last valid field values stay
+            visible below.
+          </p>
+        </section>
+      )}
+      {record.status === "needs_review" && record.flaggedFields && (
+        <ReviewPanel flaggedFields={record.flaggedFields} />
+      )}
 
       {documents.length === 0 ? (
         <section className="document-panel">

@@ -250,3 +250,13 @@ export const FACTOR_GROUP_META: readonly FactorGroupMeta[] = [
     ],
   },
 ] as const;
+
+/** Human label for a dotted wire path; falls back to the path itself. */
+export function fieldLabel(path: string): string {
+  for (const group of FACTOR_GROUP_META) {
+    for (const field of group.fields) {
+      if (field.path === path) return field.label;
+    }
+  }
+  return path;
+}

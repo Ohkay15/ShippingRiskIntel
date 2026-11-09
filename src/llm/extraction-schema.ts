@@ -67,10 +67,24 @@ export function extractionFieldEntries(
 ): { path: string; field: ExtractedField }[] {
   const entries: { path: string; field: ExtractedField }[] = [];
   for (const group of FACTOR_GROUP_META) {
-    const groupResult = result[group.key] as Record<string, ExtractedField>;
+    const groupResult = (result[group.key] ?? {}) as Record<
+      string,
+      ExtractedField | undefined
+    >;
     for (const field of group.fields) {
       const leaf = field.path.split(".")[1] ?? "";
-      entries.push({ path: field.path, field: groupResult[leaf] });
+      // A provider response that omits a field is reported as absent —
+      // never skipped, so the gate flags it as missing rather than
+      // letting it silently vanish.
+      entries.push({
+        path: field.path,
+        field:
+          groupResult[leaf] ?? {
+            value: null,
+            confidence: 0,
+            evidence: "Field not present in provider response",
+          },
+      });
     }
   }
   return entries;

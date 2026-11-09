@@ -7,6 +7,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { shipmentIntakeSchema, type ShipmentIntake } from "../schemas/shipment";
+import type { FlaggedField } from "../extraction/gate";
 import { DOCUMENT_KINDS } from "../documents/kinds";
 
 /**
@@ -32,6 +33,9 @@ export const shipments = pgTable("shipments", {
     .$type<ShipmentIntake>()
     .notNull()
     .default(shipmentIntakeSchema.parse({})),
+  // Fields that failed the 0.75 confidence gate (or the intake contract),
+  // with the provider's evidence. null until extraction has run.
+  flaggedFields: jsonb("flagged_fields").$type<FlaggedField[]>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

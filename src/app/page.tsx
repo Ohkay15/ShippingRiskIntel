@@ -34,6 +34,11 @@ export default async function Home() {
         </Link>
       </header>
 
+      <p className="page-subtitle">
+        <Link href="/review">Review queue</Link> — records waiting on human
+        judgment.
+      </p>
+
       {rows.length === 0 ? (
         <div className="state-panel">
           <h2>No shipment records yet</h2>
