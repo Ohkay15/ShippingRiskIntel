@@ -1,0 +1,35 @@
+{
+  "name": "shipping-risk-intel",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.0",
+    "next": "^15.4.0",
+    "pg": "^8.16.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.0.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "dotenv": "^16.5.0",
+    "drizzle-kit": "^0.31.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.4.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "packageManager": "pnpm@9.15.9"
+}
