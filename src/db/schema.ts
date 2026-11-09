@@ -1,4 +1,14 @@
-import { pgTable, pgEnum, text, uuid, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  pgEnum,
+  text,
+  uuid,
+  timestamp,
+  jsonb,
+} from "drizzle-orm/pg-core";
+import { shipmentIntakeSchema, type ShipmentIntake } from "../schemas/shipment";
+import type { FlaggedField } from "../extraction/gate";
+import { DOCUMENT_KINDS } from "../documents/kinds";
 
 /**
  * Shipment record lifecycle from the MVP spec:
@@ -16,13 +26,41 @@ export const shipmentStatusEnum = pgEnum("shipment_status", [
 export const shipments = pgTable("shipments", {
   id: uuid("id").defaultRandom().primaryKey(),
   status: shipmentStatusEnum("status").notNull().default("draft"),
-  // Typed intake payload arrives with the shared factor schemas
-  // (src/schemas) in the next milestone; this column is reserved for it.
-  intakeData: text("intake_data"),
+  // Structured intake payload, validated by shipmentIntakeSchema on write.
+  // JSON over the wire, strongly typed in code — parsing happens at the edge
+  // (server actions), storage trusts the validated shape.
+  intakeData: jsonb("intake_data")
+    .$type<ShipmentIntake>()
+    .notNull()
+    .default(shipmentIntakeSchema.parse({})),
+  // Fields that failed the 0.75 confidence gate (or the intake contract),
+  // with the provider's evidence. null until extraction has run.
+  flaggedFields: jsonb("flagged_fields").$type<FlaggedField[]>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const documentKindEnum = pgEnum("document_kind", DOCUMENT_KINDS);
+
+/**
+ * An uploaded source document. `rawText` keeps the extracted document text
+ * so extraction can be re-run (better provider, recalibrated prompt) without
+ * re-uploading — and so evidence quotes stay verifiable against the source.
+ */
+export const shipmentDocuments = pgTable("shipment_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  shipmentId: uuid("shipment_id")
+    .notNull()
+    .references(() => shipments.id, { onDelete: "cascade" }),
+  kind: documentKindEnum("kind").notNull(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type"),
+  rawText: text("raw_text").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "shipments" ADD COLUMN "flagged_fields" jsonb;
