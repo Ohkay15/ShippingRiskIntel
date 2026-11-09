@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/dev-setup.ts && next dev",
     "seed": "tsx scripts/seed.ts",
     "db:push": "drizzle-kit push --force",
     "fullflow": "tsx scripts/full-flow.ts",
+    "timing": "tsx scripts/timing-check.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
