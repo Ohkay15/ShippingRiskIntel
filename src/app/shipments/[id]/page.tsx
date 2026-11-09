@@ -25,6 +25,10 @@ import { MatrixCellBadge, ScoreBadge } from "@/ui/risk-badges";
 import { StatusBadge } from "@/ui/status-badge";
 import { FactorBasisBadge } from "@/ui/factor-basis-badge";
 import { shipmentIntakeSchema, type ShipmentIntake } from "@/schemas/shipment";
+import { PLACEHOLDER_CARRIER_FIT_MATRIX } from "@/carriers/matrix-data";
+import { recommendCarriers } from "@/carriers/recommend";
+import { actionedView, recommendationViews } from "@/carriers/recommendation-view";
+import { ActionedPanel, CarrierRecommendationsPanel } from "@/carriers/recommendations-panel";
 import { IntakeSummary } from "./intake-summary";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +40,9 @@ interface ShipmentRow {
   profile: RiskProfile | null;
   scoredAt: Date | null;
   flaggedFields: FlaggedField[] | null;
+  confirmedFactors: string[];
+  actionedCarrierId: string | null;
+  projectedProfile: RiskProfile | null;
 }
 
 export default async function ShipmentPage({
@@ -63,6 +70,9 @@ export default async function ShipmentPage({
         profile: shipments.profile,
         scoredAt: shipments.scoredAt,
         flaggedFields: shipments.flaggedFields,
+        confirmedFactors: shipments.confirmedFactors,
+        actionedCarrierId: shipments.actionedCarrierId,
+        projectedProfile: shipments.projectedProfile,
       })
       .from(shipments)
       .where(eq(shipments.id, id))
@@ -81,6 +91,9 @@ export default async function ShipmentPage({
         profile: row.profile ?? null,
         scoredAt: row.scoredAt ?? null,
         flaggedFields: row.flaggedFields ?? null,
+        confirmedFactors: row.confirmedFactors,
+        actionedCarrierId: row.actionedCarrierId ?? null,
+        projectedProfile: row.projectedProfile ?? null,
       };
       documents = await db
         .select({
@@ -108,6 +121,19 @@ export default async function ShipmentPage({
     record.profile != null &&
     (record.status === "scored" || record.status === "needs_review");
   const provisional = record.status === "needs_review";
+  const actionedViewData =
+    record.status === "actioned" && record.profile
+      ? actionedView(
+          record.actionedCarrierId,
+          record.actionedCarrierId != null
+            ? PLACEHOLDER_CARRIER_FIT_MATRIX.carriers.find(
+                (carrier) => carrier.id === record.actionedCarrierId
+              )?.name ?? null
+            : null,
+          record.profile,
+          record.projectedProfile
+        )
+      : null;
 
   return (
     <main className="page">
@@ -164,8 +190,11 @@ export default async function ShipmentPage({
         </>
       )}
 
+      {actionedViewData && <ActionedPanel view={actionedViewData} />}
+
       {showProfile && record.profile && (
         <ProfileOutput
+          shipmentId={record.id}
           intake={record.intakeData}
           profile={record.profile}
           scoredAt={record.scoredAt}
@@ -216,11 +245,13 @@ export default async function ShipmentPage({
  * shows its basis, then carrier recommendations.
  */
 function ProfileOutput({
+  shipmentId,
   intake,
   profile,
   scoredAt,
   provisional,
 }: {
+  shipmentId: string;
   intake: ShipmentIntake;
   profile: RiskProfile;
   scoredAt: Date | null;
@@ -233,6 +264,13 @@ function ProfileOutput({
     intake.value_fragility.declaredValueUsd ?? null,
     effectiveCoverageUsd(intake.coverage)
   );
+  // Static fit matrix (spec Phase 4): recommendations are pure engine
+  // output over the confirmed record; picking one is the gate below.
+  const recommendationViewsData = provisional
+    ? []
+    : recommendationViews(
+        recommendCarriers(intake, profile, PLACEHOLDER_CARRIER_FIT_MATRIX)
+      );
 
   return (
     <section className="profile-output" aria-label="Risk profile">
@@ -307,14 +345,21 @@ function ProfileOutput({
         </table>
       </div>
 
-      <section className="document-panel carriers-stub">
-        <h2>Carrier recommendations</h2>
-        <p className="field-hint">
-          The static carrier fit matrix lands in the next milestone — three
-          carriers with the factors each one improves and the projected score
-          change.
-        </p>
-      </section>
+      {provisional ? (
+        <section className="document-panel carrier-panel" aria-label="Carrier recommendations">
+          <h2>Carrier recommendations</h2>
+          <p className="field-hint">
+            Recommendations appear once the flagged factors are resolved —
+            they are projected from the confirmed record only.
+          </p>
+        </section>
+      ) : (
+        <CarrierRecommendationsPanel
+          shipmentId={shipmentId}
+          views={recommendationViewsData}
+          matrixSourceLabel={PLACEHOLDER_CARRIER_FIT_MATRIX.sourceLabel}
+        />
+      )}
     </section>
   );
 }
