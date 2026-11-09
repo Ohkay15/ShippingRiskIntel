@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { resolveReviewRecord } from "@/app/actions/review";
 import { db } from "@/db";
@@ -7,7 +8,7 @@ import { shipments } from "@/db/schema";
 import type { ShipmentStatus } from "@/db/lifecycle";
 import type { FlaggedField } from "@/extraction/gate";
 import { FACTOR_GROUP_META } from "@/intake/form-fields";
-import { shipmentIntakeSchema, type FactorKey } from "@/schemas/shipment";
+import { FACTOR_KEYS, shipmentIntakeSchema, type FactorKey } from "@/schemas/shipment";
 import { recordSummary } from "@/profile/view-model";
 import { StatusBadge } from "@/ui/status-badge";
 import { ReviewResolveForm } from "./review-resolve-form";
@@ -26,6 +27,7 @@ export default async function ReviewQueuePage() {
     id: string;
     status: ShipmentStatus;
     intakeData: unknown;
+    profile: unknown;
     flaggedFields: FlaggedField[] | null;
     updatedAt: Date;
   }[];
@@ -35,6 +37,7 @@ export default async function ReviewQueuePage() {
         id: shipments.id,
         status: shipments.status,
         intakeData: shipments.intakeData,
+        profile: shipments.profile,
         flaggedFields: shipments.flaggedFields,
         updatedAt: shipments.updatedAt,
       })
@@ -107,6 +110,7 @@ function ReviewQueueEntry({
     id: string;
     status: ShipmentStatus;
     intakeData: unknown;
+    profile: unknown;
     flaggedFields: FlaggedField[] | null;
     updatedAt: Date;
   };
@@ -135,20 +139,14 @@ function ReviewQueueEntry({
         <p className="entry-summary">{recordSummary(intake.data)}</p>
       )}
 
-      {flagged.length === 0 ? (
-        <p className="field-hint">
-          This record has no recorded flags — its score relied on unconfirmed
-          defaults. Resolve it from the{" "}
-          <Link href={`/shipments/${row.id}/edit`}>full edit form</Link>.
-        </p>
-      ) : intake.success ? (
+      {intake.success ? (
         <details>
           <summary className="button-secondary">Resolve fields</summary>
           <ReviewResolveForm
             action={resolveReviewRecord.bind(null, row.id)}
             flaggedFields={flagged}
             defaults={wireDefaults(intake.data, flagged)}
-            affectedFactors={affectedFactors(flagged)}
+            affectedFactors={affectedFactors(flagged, defaultFactors(row.profile))}
           />
         </details>
       ) : (
@@ -182,17 +180,42 @@ function wireDefaults(
   return defaults;
 }
 
-/** Unique factors the flags touch, for the accept-at-default checkboxes. */
+/** Factors whose score used the conservative default — from the stored profile. */
+function defaultFactors(profile: unknown): FactorKey[] {
+  const parsed = z
+    .object({
+      ratings: z.array(
+        z.object({
+          factor: z.string(),
+          basis: z.object({ source: z.string() }).passthrough(),
+        })
+      ),
+    })
+    .safeParse(profile);
+  if (!parsed.success) return [];
+  return parsed.data.ratings
+    .filter((r) => r.basis.source === "default")
+    .map((r) => r.factor)
+    .filter((factor): factor is FactorKey =>
+      (FACTOR_KEYS as readonly string[]).includes(factor)
+    );
+}
+
+/** Unique factors the flags or defaults touch, for the checkboxes. */
 function affectedFactors(
-  flagged: FlaggedField[]
+  flagged: FlaggedField[],
+  extra: FactorKey[] = []
 ): { key: FactorKey; title: string }[] {
   const seen = new Map<FactorKey, string>();
+  const groupOf = (key: string) =>
+    FACTOR_GROUP_META.find((entry) => entry.key === key);
   for (const flag of flagged) {
-    const group = flag.path.split(".")[0];
-    const meta = FACTOR_GROUP_META.find((entry) => entry.key === group);
-    if (meta) {
-      seen.set(meta.key, meta.title);
-    }
+    const meta = groupOf(flag.path.split(".")[0]);
+    if (meta) seen.set(meta.key, meta.title);
+  }
+  for (const factor of extra) {
+    const meta = groupOf(factor);
+    if (meta) seen.set(meta.key, meta.title);
   }
   return [...seen].map(([key, title]) => ({ key, title }));
 }
