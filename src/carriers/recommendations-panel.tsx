@@ -1,5 +1,4 @@
-import { pickCarrierRecommendation } from "@/app/actions/carriers";
-import { PickCarrierButton } from "@/ui/pick-carrier-button";
+import { formatUsd } from "@/coverage/display";
 
 import type { ActionedView, RecommendationView } from "./recommendation-view";
 
@@ -10,11 +9,9 @@ import type { ActionedView, RecommendationView } from "./recommendation-view";
  */
 
 export function CarrierRecommendationsPanel({
-  shipmentId,
   views,
   matrixSourceLabel,
 }: {
-  shipmentId: string;
   views: RecommendationView[];
   matrixSourceLabel: string;
 }) {
@@ -25,7 +22,8 @@ export function CarrierRecommendationsPanel({
         Three best-fit carriers for this shipment&rsquo;s cargo type, mode, and
         lane risk. Each projection is the record re-scored with that
         carrier&rsquo;s record and liability limit — the same engine that
-        produced this profile. Picking one actions the record.
+        produced this profile. Pick one (plus, optionally, an insurance
+        product below) and action the record.
       </p>
       {views.length === 0 ? (
         <p className="field-hint" data-testid="carrier-recs-empty">
@@ -68,10 +66,10 @@ export function CarrierRecommendationsPanel({
                   </p>
                 )}
                 <div className="carrier-card-actions">
-                  <PickCarrierButton
-                    action={pickCarrierRecommendation.bind(null, shipmentId, view.carrierId)}
-                    carrierName={view.carrierName}
-                  />
+                  <label className="pick-toggle">
+                    <input type="checkbox" name="picks" value={`carrier:${view.carrierId}`} />
+                    <span>Pick {view.carrierName}</span>
+                  </label>
                 </div>
               </li>
             ))}
@@ -82,14 +80,30 @@ export function CarrierRecommendationsPanel({
   );
 }
 
+/**
+ * The Actioned panel: the picks recorded on the transition — a carrier, an
+ * insurance product, or both — plus the stored post-action projection.
+ */
 export function ActionedPanel({ view }: { view: ActionedView }) {
   return (
-    <section className="document-panel carrier-panel" aria-label="Actioned carrier">
-      <h2>Actioned — carrier selected</h2>
-      <p>
-        This record is locked with <strong>{view.carrierName}</strong> as the
-        chosen carrier.
-      </p>
+    <section className="document-panel carrier-panel" aria-label="Actioned picks">
+      <h2>Actioned</h2>
+      {view.carrierName && (
+        <p>
+          This record is locked with <strong>{view.carrierName}</strong>
+          {view.carrierFound ? " as the chosen carrier." : " (no longer in the fit matrix)."}
+        </p>
+      )}
+      {view.insurance && (
+        <p>
+          Insured with <strong>{view.insurance.label}</strong>
+          {view.insurance.found
+            ? view.insurance.appliedLimitUsd != null
+              ? ` — ${formatUsd(view.insurance.appliedLimitUsd)} per-shipment coverage applied.`
+              : "."
+            : " (no longer in the insurer matrix)."}
+        </p>
+      )}
       {view.projectedScore == null || view.projectedCell == null ? (
         <p className="field-hint">
           No post-action projection is stored for this record — it was actioned

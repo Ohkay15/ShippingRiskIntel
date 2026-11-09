@@ -128,7 +128,9 @@ function ReviewQueueEntry({
         </Link>
         <StatusBadge status={row.status} />
         <span className="flag-count">
-          {flagged.length} flagged field{flagged.length === 1 ? "" : "s"}
+          {flagged.length > 0
+            ? `${flagged.length} flagged field${flagged.length === 1 ? "" : "s"}`
+            : "scored on defaults — confirm factors"}
         </span>
         <span className="entry-updated mono">
           {row.updatedAt.toISOString().slice(0, 16).replace("T", " ")}
@@ -141,7 +143,9 @@ function ReviewQueueEntry({
 
       {intake.success ? (
         <details>
-          <summary className="button-secondary">Resolve fields</summary>
+          <summary className="button-secondary">
+            {flagged.length > 0 ? "Resolve fields" : "Confirm factors"}
+          </summary>
           <ReviewResolveForm
             action={resolveReviewRecord.bind(null, row.id)}
             flaggedFields={flagged}

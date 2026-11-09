@@ -121,6 +121,8 @@ export interface InsuranceRecommendation {
   /** Coverage the product would actually provide: product limit capped by the recommended limit. */
   providedCoverageUsd: number;
   limitFit: LimitFit;
+  /** The record's carrier liability limit — the OTHER layer the gap math mins with. Null when absent. */
+  carrierLiabilityLimitUsd: number | null;
   /** Real gap math on the record after taking the product. Null when value or coverage data is absent. */
   projectedGapUsd: number | null;
   /** projectedGap − current gap; negative = exposure closed. Null when either gap is unknown. */
@@ -166,6 +168,7 @@ export function recommendInsurance(
         recommendedLimitUsd,
         providedCoverageUsd: appliedCoverageUsd(product, recommendedLimitUsd),
         limitFit: limitFit(product, recommendedLimitUsd),
+        carrierLiabilityLimitUsd: record.coverage.carrierLiabilityLimitUsd ?? null,
         projectedGapUsd,
         gapDeltaUsd,
         projectedProfile,

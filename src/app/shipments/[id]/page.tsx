@@ -29,6 +29,16 @@ import { PLACEHOLDER_CARRIER_FIT_MATRIX } from "@/carriers/matrix-data";
 import { recommendCarriers } from "@/carriers/recommend";
 import { actionedView, recommendationViews } from "@/carriers/recommendation-view";
 import { ActionedPanel, CarrierRecommendationsPanel } from "@/carriers/recommendations-panel";
+import { actionWithPicks } from "@/app/actions/picks";
+import { ActionPicksForm } from "@/profile/action-picks-form";
+import { PLACEHOLDER_INSURER_FIT_MATRIX } from "@/insurance/matrix-data";
+import { recommendCoverageLimit } from "@/insurance/limit";
+import { appliedCoverageUsd, recommendInsurance } from "@/insurance/recommend";
+import {
+  insuranceRecommendationViews,
+  limitGuidanceView,
+} from "@/insurance/recommendation-view";
+import { InsuranceRecommendationsPanel } from "@/insurance/recommendations-panel";
 import { IntakeSummary } from "./intake-summary";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +52,7 @@ interface ShipmentRow {
   flaggedFields: FlaggedField[] | null;
   confirmedFactors: string[];
   actionedCarrierId: string | null;
+  actionedInsuranceProductId: string | null;
   projectedProfile: RiskProfile | null;
 }
 
@@ -72,6 +83,7 @@ export default async function ShipmentPage({
         flaggedFields: shipments.flaggedFields,
         confirmedFactors: shipments.confirmedFactors,
         actionedCarrierId: shipments.actionedCarrierId,
+        actionedInsuranceProductId: shipments.actionedInsuranceProductId,
         projectedProfile: shipments.projectedProfile,
       })
       .from(shipments)
@@ -93,6 +105,7 @@ export default async function ShipmentPage({
         flaggedFields: row.flaggedFields ?? null,
         confirmedFactors: row.confirmedFactors,
         actionedCarrierId: row.actionedCarrierId ?? null,
+        actionedInsuranceProductId: row.actionedInsuranceProductId ?? null,
         projectedProfile: row.projectedProfile ?? null,
       };
       documents = await db
@@ -121,19 +134,42 @@ export default async function ShipmentPage({
     record.profile != null &&
     (record.status === "scored" || record.status === "needs_review");
   const provisional = record.status === "needs_review";
-  const actionedViewData =
-    record.status === "actioned" && record.profile
-      ? actionedView(
-          record.actionedCarrierId,
-          record.actionedCarrierId != null
-            ? PLACEHOLDER_CARRIER_FIT_MATRIX.carriers.find(
-                (carrier) => carrier.id === record.actionedCarrierId
-              )?.name ?? null
-            : null,
-          record.profile,
-          record.projectedProfile
-        )
+
+  let actionedViewData = null;
+  if (record.status === "actioned" && record.profile) {
+    const carrier = record.actionedCarrierId
+      ? PLACEHOLDER_CARRIER_FIT_MATRIX.carriers.find(
+          (entry) => entry.id === record.actionedCarrierId
+        ) ?? null
       : null;
+    const product = record.actionedInsuranceProductId
+      ? PLACEHOLDER_INSURER_FIT_MATRIX.products.find(
+          (entry) => entry.id === record.actionedInsuranceProductId
+        ) ?? null
+      : null;
+    actionedViewData = actionedView(
+      record.actionedCarrierId,
+      carrier?.name ?? null,
+      record.profile,
+      record.projectedProfile,
+      record.actionedInsuranceProductId
+        ? {
+            label: product
+              ? `${product.insurerName} — ${product.productName}`
+              : record.actionedInsuranceProductId,
+            found: product != null,
+            appliedLimitUsd:
+              product && record.profile
+                ? appliedCoverageUsd(
+                    product,
+                    recommendCoverageLimit(record.intakeData, record.profile)
+                      .recommendedLimitUsd
+                  )
+                : null,
+          }
+        : null
+    );
+  }
 
   return (
     <main className="page">
@@ -264,12 +300,27 @@ function ProfileOutput({
     intake.value_fragility.declaredValueUsd ?? null,
     effectiveCoverageUsd(intake.coverage)
   );
-  // Static fit matrix (spec Phase 4): recommendations are pure engine
+  // Static fit matrices (spec Phase 4): recommendations are pure engine
   // output over the confirmed record; picking one is the gate below.
   const recommendationViewsData = provisional
     ? []
     : recommendationViews(
         recommendCarriers(intake, profile, PLACEHOLDER_CARRIER_FIT_MATRIX)
+      );
+  // Insurance mirrors the carrier path: limit guidance from the record,
+  // then product projections through the real engine — concrete dollar
+  // gap deltas, never generic rationale strings.
+  const limitRecommendation = recommendCoverageLimit(intake, profile);
+  const insuranceViewsData = provisional
+    ? []
+    : insuranceRecommendationViews(
+        recommendInsurance(
+          intake,
+          profile,
+          PLACEHOLDER_INSURER_FIT_MATRIX,
+          limitRecommendation.recommendedLimitUsd
+        ),
+        profile.coverageGapUsd
       );
 
   return (
@@ -346,19 +397,34 @@ function ProfileOutput({
       </div>
 
       {provisional ? (
-        <section className="document-panel carrier-panel" aria-label="Carrier recommendations">
-          <h2>Carrier recommendations</h2>
-          <p className="field-hint">
-            Recommendations appear once the flagged factors are resolved —
-            they are projected from the confirmed record only.
-          </p>
-        </section>
+        <>
+          <section className="document-panel carrier-panel" aria-label="Carrier recommendations">
+            <h2>Carrier recommendations</h2>
+            <p className="field-hint">
+              Recommendations appear once the flagged factors are resolved —
+              they are projected from the confirmed record only.
+            </p>
+          </section>
+          <section className="document-panel insurance-panel" aria-label="Insurance recommendations">
+            <h2>Insurance recommendations</h2>
+            <p className="field-hint">
+              Insurance guidance appears once the flagged factors are resolved —
+              it is projected from the confirmed record only.
+            </p>
+          </section>
+        </>
       ) : (
-        <CarrierRecommendationsPanel
-          shipmentId={shipmentId}
-          views={recommendationViewsData}
-          matrixSourceLabel={PLACEHOLDER_CARRIER_FIT_MATRIX.sourceLabel}
-        />
+        <ActionPicksForm action={actionWithPicks.bind(null, shipmentId)}>
+          <CarrierRecommendationsPanel
+            views={recommendationViewsData}
+            matrixSourceLabel={PLACEHOLDER_CARRIER_FIT_MATRIX.sourceLabel}
+          />
+          <InsuranceRecommendationsPanel
+            limitView={limitGuidanceView(limitRecommendation)}
+            views={insuranceViewsData}
+            matrixSourceLabel={PLACEHOLDER_INSURER_FIT_MATRIX.sourceLabel}
+          />
+        </ActionPicksForm>
       )}
     </section>
   );
