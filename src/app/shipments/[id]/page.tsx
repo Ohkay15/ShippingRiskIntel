@@ -1,9 +1,15 @@
 import Link from "next/link";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
+import { uploadDocument } from "@/app/actions/documents";
 import { db } from "@/db";
-import { shipments } from "@/db/schema";
+import { shipments, shipmentDocuments } from "@/db/schema";
 import type { ShipmentStatus } from "@/db/lifecycle";
+import {
+  DOCUMENT_KIND_LABELS,
+  type DocumentKind,
+} from "@/documents/kinds";
+import { DocumentUploadPanel } from "@/documents/document-upload-panel";
 import { shipmentIntakeSchema, type ShipmentIntake } from "@/schemas/shipment";
 import { StatusBadge } from "@/ui/status-badge";
 import { IntakeSummary } from "./intake-summary";
@@ -20,6 +26,13 @@ export default async function ShipmentPage({
   let record:
     | { id: string; status: ShipmentStatus; intakeData: ShipmentIntake }
     | undefined;
+  let documents: {
+    id: string;
+    kind: DocumentKind;
+    filename: string;
+    createdAt: Date;
+  }[] = [];
+
   try {
     const rows = await db
       .select({
@@ -38,6 +51,16 @@ export default async function ShipmentPage({
       : undefined;
     if (row && intake?.success) {
       record = { id: row.id, status: row.status, intakeData: intake.data };
+      documents = await db
+        .select({
+          id: shipmentDocuments.id,
+          kind: shipmentDocuments.kind,
+          filename: shipmentDocuments.filename,
+          createdAt: shipmentDocuments.createdAt,
+        })
+        .from(shipmentDocuments)
+        .where(eq(shipmentDocuments.shipmentId, id))
+        .orderBy(desc(shipmentDocuments.createdAt));
     } else {
       record = undefined;
     }
@@ -58,6 +81,34 @@ export default async function ShipmentPage({
         </div>
         <StatusBadge status={record.status} />
       </header>
+
+      <DocumentUploadPanel
+        shipmentId={record.id}
+        action={uploadDocument.bind(null, record.id)}
+      />
+
+      {documents.length === 0 ? (
+        <section className="document-panel">
+          <h2>Attached documents</h2>
+          <p className="field-hint">
+            No documents attached yet. Upload a commercial invoice, packing
+            list, bill of lading, or DG declaration above to pre-fill this
+            record from its contents.
+          </p>
+        </section>
+      ) : (
+        <section className="document-panel">
+          <h2>Attached documents</h2>
+          <ul className="document-list">
+            {documents.map((doc) => (
+              <li key={doc.id} className="document-row">
+                <span>{DOCUMENT_KIND_LABELS[doc.kind]}</span>
+                <span className="mono">{doc.filename}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <IntakeSummary intake={record.intakeData} />
 

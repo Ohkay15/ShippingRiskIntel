@@ -1,11 +1,13 @@
 import {
   pgTable,
   pgEnum,
+  text,
   uuid,
   timestamp,
   jsonb,
 } from "drizzle-orm/pg-core";
 import { shipmentIntakeSchema, type ShipmentIntake } from "../schemas/shipment";
+import { DOCUMENT_KINDS } from "../documents/kinds";
 
 /**
  * Shipment record lifecycle from the MVP spec:
@@ -34,6 +36,27 @@ export const shipments = pgTable("shipments", {
     .notNull()
     .defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const documentKindEnum = pgEnum("document_kind", DOCUMENT_KINDS);
+
+/**
+ * An uploaded source document. `rawText` keeps the extracted document text
+ * so extraction can be re-run (better provider, recalibrated prompt) without
+ * re-uploading — and so evidence quotes stay verifiable against the source.
+ */
+export const shipmentDocuments = pgTable("shipment_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  shipmentId: uuid("shipment_id")
+    .notNull()
+    .references(() => shipments.id, { onDelete: "cascade" }),
+  kind: documentKindEnum("kind").notNull(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type"),
+  rawText: text("raw_text").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
