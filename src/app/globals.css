@@ -68,6 +68,40 @@ body {
   margin: 0.5rem 0 0;
 }
 
+/* ---- Site nav ---- */
+
+.site-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-nav-brand {
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--foreground);
+}
+
+.site-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.site-nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.site-nav-links a.button-primary {
+  color: #fff;
+}
+
 /* ---- Page layout ---- */
 
 .page {
@@ -129,6 +163,113 @@ button[type="submit"]:disabled {
   background: var(--surface);
   color: var(--foreground);
   border-color: var(--border);
+}
+
+/* ---- Risk badges (score + matrix cell) ---- */
+
+.score-badge,
+.matrix-cell-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.score-badge-scale {
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 0.15rem;
+}
+
+.cell-ll {
+  color: #0f766e;
+  background: #ccfbf1;
+  border-color: #5eead4;
+}
+
+.cell-lh {
+  color: #92400e;
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+}
+
+.cell-hl {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #fb923c;
+}
+
+.cell-hh {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+/* ---- Coverage gap tones ---- */
+
+.gap-cell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.gap-danger {
+  color: var(--danger);
+}
+
+.gap-ok {
+  color: #15803d;
+}
+
+.gap-warning {
+  color: #92400e;
+}
+
+/* Provisional: a needs_review record's score is a conservative estimate. */
+.provisional {
+  opacity: 0.55;
+  font-weight: 500;
+}
+
+.muted-dash {
+  color: var(--muted);
+}
+
+.record-id {
+  display: block;
+}
+
+.record-desc {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  max-width: 22rem;
+}
+
+.sort-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sort-link:hover {
+  color: var(--accent);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.page-links a {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.demo-seed-form {
+  justify-content: center;
+  margin: 1rem 0;
 }
 
 /* ---- Status badges ---- */

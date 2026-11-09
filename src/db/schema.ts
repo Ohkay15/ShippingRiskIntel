@@ -7,6 +7,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { shipmentIntakeSchema, type ShipmentIntake } from "../schemas/shipment";
+import type { RiskProfile } from "../scoring/engine";
 import type { FlaggedField } from "../extraction/gate";
 import { DOCUMENT_KINDS } from "../documents/kinds";
 
@@ -36,6 +37,15 @@ export const shipments = pgTable("shipments", {
   // Fields that failed the 0.75 confidence gate (or the intake contract),
   // with the provider's evidence. null until extraction has run.
   flaggedFields: jsonb("flagged_fields").$type<FlaggedField[]>(),
+  // Latest computed risk profile (spec: the dashboard reads profiles from
+  // storage — engine changes never touch UI code). null until first score;
+  // shown as provisional while the record sits in needs_review.
+  profile: jsonb("profile").$type<RiskProfile>(),
+  scoredAt: timestamp("scored_at", { withTimezone: true }),
+  // Factors the operator accepted at their conservative default rating in
+  // the review queue (spec: "Accept, correct, or fill fields"). Only ever
+  // applies while the factor's required data is still missing.
+  confirmedFactors: jsonb("confirmed_factors").$type<string[]>().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

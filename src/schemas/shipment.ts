@@ -224,21 +224,34 @@ export function coverageGapUsd(
   coverage: Pick<Coverage, "insuranceCoverageUsd" | "carrierLiabilityLimitUsd">
 ): number | null {
   const { declaredValueUsd } = valueFragility;
-  const { insuranceCoverageUsd, carrierLiabilityLimitUsd } = coverage;
+  const effectiveCoverage = effectiveCoverageUsd(coverage);
 
-  if (
-    declaredValueUsd == null ||
-    (insuranceCoverageUsd == null && carrierLiabilityLimitUsd == null)
-  ) {
+  if (declaredValueUsd == null || effectiveCoverage == null) {
     return null;
   }
 
-  const effectiveCoverage =
-    insuranceCoverageUsd != null && carrierLiabilityLimitUsd != null
-      ? Math.min(insuranceCoverageUsd, carrierLiabilityLimitUsd)
-      : (insuranceCoverageUsd ?? carrierLiabilityLimitUsd)!;
-
   return roundToCents(declaredValueUsd - effectiveCoverage);
+}
+
+/**
+ * The coverage actually in force: the smaller of the insurance amount and
+ * the carrier liability limit, or whichever of the two is on file. Null
+ * when no coverage data exists at all.
+ */
+export function effectiveCoverageUsd(
+  coverage: Pick<Coverage, "insuranceCoverageUsd" | "carrierLiabilityLimitUsd">
+): number | null {
+  const { insuranceCoverageUsd, carrierLiabilityLimitUsd } = coverage;
+
+  if (insuranceCoverageUsd == null && carrierLiabilityLimitUsd == null) {
+    return null;
+  }
+
+  if (insuranceCoverageUsd != null && carrierLiabilityLimitUsd != null) {
+    return Math.min(insuranceCoverageUsd, carrierLiabilityLimitUsd);
+  }
+
+  return (insuranceCoverageUsd ?? carrierLiabilityLimitUsd)!;
 }
 
 /** Two-decimal rounding so float artifacts never leak into dollar amounts. */
