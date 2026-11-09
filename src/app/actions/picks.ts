@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { markActioned } from "@/lifecycle/actioned";
-import { pickSelectionError, picksFromFormValues } from "@/profile/picks";
+import {
+  actionedPickInputs,
+  pickSelectionError,
+  picksFromFormValues,
+} from "@/profile/picks";
 
 export interface ActionPicksState {
   status: "idle" | "error";
@@ -29,10 +33,7 @@ export async function actionWithPicks(
     return { status: "error", message: selectionError };
   }
 
-  const outcome = await markActioned(shipmentId, {
-    carrierRecommendationId: picked.carrierIds[0] ?? null,
-    insuranceProductId: picked.insuranceIds[0] ?? null,
-  });
+  const outcome = await markActioned(shipmentId, actionedPickInputs(picked));
   if (!outcome.ok) {
     return { status: "error", message: outcome.message };
   }

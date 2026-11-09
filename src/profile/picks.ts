@@ -44,3 +44,18 @@ export function pickSelectionError({ carrierIds, insuranceIds }: PickedIds): str
   }
   return null;
 }
+
+/**
+ * The markActioned transition inputs for a validated selection: one
+ * carrier, one insurance product, or one of each — the single Scored →
+ * Actioned transition carries every selected pick.
+ */
+export function actionedPickInputs({ carrierIds, insuranceIds }: PickedIds): {
+  carrierRecommendationId: string | null;
+  insuranceProductId: string | null;
+} {
+  return {
+    carrierRecommendationId: carrierIds[0] ?? null,
+    insuranceProductId: insuranceIds[0] ?? null,
+  };
+}
