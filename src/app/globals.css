@@ -104,6 +104,24 @@
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
 
+  /* ---- Type scale (display anchored, tight tracking up top) ---- */
+  --text-display: 2.375rem; /* coverage-gap hero number */
+  --text-title: 1.75rem; /* page h1 */
+  --text-heading: 1.0625rem; /* panel h2 */
+  --text-body: 0.9375rem;
+  --text-small: 0.8125rem;
+  --text-caption: 0.6875rem; /* eyebrows, table headers */
+
+  /* ---- Spacing scale (8pt rhythm) ---- */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.5rem; /* 24px */
+  --space-6: 2rem; /* 32px */
+  --space-7: 2.5rem; /* 40px */
+  --space-8: 3rem; /* 48px */
+
   /* ---- Motion: subtle and fast only (150–250ms, gentle ease-out) ---- */
   --motion-fast: 150ms;
   --motion-base: 200ms;
