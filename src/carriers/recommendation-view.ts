@@ -70,25 +70,41 @@ export function recommendationViews(
   }));
 }
 
+export interface ActionedInsuranceView {
+  /** "Chubb — Marine Cargo", or the raw stored id when the product left the matrix. */
+  label: string;
+  found: boolean;
+  /** Coverage the pick actually applies (product limit capped by the recommendation); null when unknown. */
+  appliedLimitUsd: number | null;
+}
+
 export interface ActionedView {
-  carrierName: string;
+  /** Null when only an insurance product was picked. */
+  carrierName: string | null;
   carrierFound: boolean;
+  /** Null when only a carrier was picked. */
+  insurance: ActionedInsuranceView | null;
   projectedScore: number | null;
   projectedCell: RiskProfile["cell"] | null;
   currentScore: number;
   factors: FactorDeltaView[];
 }
 
-/** The Actioned panel's view: chosen carrier plus the stored projection. */
+/** The Actioned panel's view: the picks recorded on the record plus the stored projection. */
 export function actionedView(
   carrierId: string | null,
   carrierName: string | null,
   storedProfile: RiskProfile,
-  projectedProfile: RiskProfile | null
+  projectedProfile: RiskProfile | null,
+  insurance: ActionedInsuranceView | null = null
 ): ActionedView {
   return {
-    carrierName: carrierName ?? carrierId ?? "Unknown carrier",
+    carrierName:
+      carrierId == null && insurance != null
+        ? null
+        : (carrierName ?? carrierId ?? "Unknown carrier"),
     carrierFound: carrierName != null,
+    insurance,
     projectedScore: projectedProfile?.score ?? null,
     projectedCell: projectedProfile?.cell ?? null,
     currentScore: storedProfile.score,
