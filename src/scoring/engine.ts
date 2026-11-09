@@ -97,12 +97,28 @@ interface RecordView {
   };
 }
 
+/**
+ * Factors the operator explicitly accepted at their conservative default
+ * rating in the review queue (spec: "Accept, correct, or fill fields").
+ *
+ * A confirmed factor never raises a review flag: while its required data is
+ * still missing it is rated at the conservative default with a human
+ * `review` basis; once the data arrives the ordinary rules rate it again —
+ * a confirmation only covers the missing-data case, never overrides real
+ * data. Empty by default; the composite remains a pure function of record,
+ * config, and this set.
+ */
+export const OPERATOR_REVIEWER_ID = "operator";
+
 export function score(
   record: ShipmentIntake,
-  config: ScoringConfig = DEFAULT_SCORING_CONFIG
+  config: ScoringConfig = DEFAULT_SCORING_CONFIG,
+  confirmedFactors: ReadonlySet<FactorKey> = new Set()
 ): RiskProfile {
   const view = buildRecordView(record);
-  const ratings = FACTOR_KEYS.map((factor) => rateFactor(factor, view, config));
+  const ratings = FACTOR_KEYS.map((factor) =>
+    rateFactor(factor, view, config, confirmedFactors)
+  );
 
   const likelihoodIndex = round2(weightedMean(ratings, "likelihood"));
   const consequenceIndex = round2(topTwoMean(ratings));
@@ -139,13 +155,20 @@ function buildRecordView(record: ShipmentIntake): RecordView {
   };
 }
 
-function rateFactor(factor: FactorKey, view: RecordView, config: ScoringConfig): FactorRating {
+function rateFactor(
+  factor: FactorKey,
+  view: RecordView,
+  config: ScoringConfig,
+  confirmedFactors: ReadonlySet<FactorKey>
+): FactorRating {
   const ruleSet = config.rules[factor];
   const weight = config.weights[factor];
 
   const missing = ruleSet.requiredFields.filter((path) => !resolveField(view, path).present);
   if (missing.length > 0) {
-    return defaultRating(factor, weight, config, `Missing required data: ${missing.join(", ")}`);
+    return confirmedFactors.has(factor)
+      ? confirmedDefaultRating(factor, weight, config.defaults)
+      : defaultRating(factor, weight, config, `Missing required data: ${missing.join(", ")}`);
   }
 
   for (const rule of ruleSet.rules) {
@@ -160,12 +183,14 @@ function rateFactor(factor: FactorKey, view: RecordView, config: ScoringConfig):
     }
   }
 
-  return defaultRating(
-    factor,
-    weight,
-    config,
-    "No rule matched the available data — possible config coverage gap"
-  );
+  return confirmedFactors.has(factor)
+    ? confirmedDefaultRating(factor, weight, config.defaults)
+    : defaultRating(
+        factor,
+        weight,
+        config,
+        "No rule matched the available data — possible config coverage gap"
+      );
 }
 
 function defaultRating(
@@ -180,6 +205,21 @@ function defaultRating(
     consequence: config.defaults.consequence,
     weight,
     basis: { source: "default", reason },
+  };
+}
+
+/** The operator accepted the conservative default in the review queue. */
+function confirmedDefaultRating(
+  factor: FactorKey,
+  weight: number,
+  defaults: ScoringConfig["defaults"]
+): FactorRating {
+  return {
+    factor,
+    likelihood: defaults.likelihood,
+    consequence: defaults.consequence,
+    weight,
+    basis: { source: "review", reviewerId: OPERATOR_REVIEWER_ID },
   };
 }
 

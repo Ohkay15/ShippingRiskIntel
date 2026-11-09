@@ -12,6 +12,7 @@ import {
 import { db } from "@/db";
 import { shipments, shipmentDocuments } from "@/db/schema";
 import { getLlmClient } from "@/llm";
+import { canConfirmRecord } from "@/lifecycle/machine";
 import { shipmentIntakeSchema } from "@/schemas/shipment";
 
 /**
@@ -47,7 +48,7 @@ export async function confirmShipment(
   if (!record) {
     return { status: "error", message: "Record not found." };
   }
-  if (record.status !== "draft") {
+  if (!canConfirmRecord(record.status)) {
     return {
       status: "error",
       message: `Record is ${record.status}; only draft records can be confirmed for extraction.`,

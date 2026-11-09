@@ -69,7 +69,12 @@ function defaultFor(
   return String(value);
 }
 
-function FieldInput({
+/**
+ * One intake field, rendered from its declarative def. Shared by the full
+ * intake form and the review queue's flagged-field editors so a field can
+ * never render differently in the two surfaces.
+ */
+export function FieldInput({
   field,
   error,
   defaultValue,
