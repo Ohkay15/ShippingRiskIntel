@@ -252,12 +252,14 @@ describe("score — matrix cell", () => {
           carrierSafetyRating: 1,
           carrierClaimsRating: 1,
         },
+        value_fragility: { declaredValueUsd: 95000, fragilityClass: "low" },
         sensitivity: { delaySensitivity: "flexible" },
+        coverage: { insuranceCoverageUsd: 150000, carrierLiabilityLimitUsd: 150000 },
       })
     );
     expect(profile.cell).toBe("LL");
-    expect(profile.meanLikelihood).toBeLessThan(2);
-    expect(profile.meanConsequence).toBeLessThan(2);
+    expect(profile.likelihoodIndex).toBeLessThan(2);
+    expect(profile.consequenceIndex).toBeLessThanOrEqual(2);
   });
 
   it("places a hazard-heavy shipment in the HH corner", () => {
@@ -271,8 +273,8 @@ describe("score — matrix cell", () => {
       })
     );
     expect(profile.cell).toBe("HH");
-    expect(profile.meanLikelihood).toBeGreaterThan(3);
-    expect(profile.meanConsequence).toBeGreaterThan(3);
+    expect(profile.likelihoodIndex).toBeGreaterThan(3);
+    expect(profile.consequenceIndex).toBeGreaterThan(3);
   });
 
   it("moves both axes with the configured split", () => {

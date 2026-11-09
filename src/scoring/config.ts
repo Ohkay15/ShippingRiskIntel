@@ -145,7 +145,13 @@ export const DEFAULT_SCORING_CONFIG: ScoringConfig = scoringConfigSchema.parse({
     escalation: 0.08,
     coverage: 0.06,
   },
-  matrixSplitAt: 2.5,
+  /**
+   * Quadrant split for the matrix cell: a rollup above this is the high
+   * side. Set at 2 so any regulated cargo, active friction, or elevated
+   * consequence lifts a record out of the LL corner — the benign band is
+   * 1.0–2.0, not the scale midpoint.
+   */
+  matrixSplitAt: 2,
   defaults: { likelihood: 3, consequence: 3, flaggedForReview: true },
   rules: {
     cargo_hazard: {
@@ -154,7 +160,7 @@ export const DEFAULT_SCORING_CONFIG: ScoringConfig = scoringConfigSchema.parse({
         {
           id: "hazard_high",
           when: { field: "record.cargo_hazard.hazardClass", op: "in", values: HIGH_HAZARD_CLASSES },
-          likelihood: 5,
+          likelihood: 4,
           consequence: 4,
           note: "UN-classified dangerous goods with acute incident potential",
         },

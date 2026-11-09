@@ -57,8 +57,18 @@ export interface RiskProfile {
   /** Matrix position after likelihood/consequence rollup. */
   cell: MatrixCell;
   /** Weighted-average ratings — the coordinates behind the cell. */
-  meanLikelihood: number;
-  meanConsequence: number;
+  /**
+   * Rolled-up likelihood axis (weighted mean of factor likelihoods, 1–5).
+   * A weighted mean fits likelihood: it aggregates many independent chances.
+   */
+  likelihoodIndex: number;
+  /**
+   * Rolled-up consequence axis (mean of the two highest factor consequences,
+   * 1–5). Consequence is worst-case-dominated — a single catastrophic factor
+   * must keep the axis high; a plain weighted mean would dilute it and clump
+   * the matrix mid-band.
+   */
+  consequenceIndex: number;
   /** Full factor breakdown; every rating shows its basis in the UI. */
   ratings: readonly FactorRating[];
   /**
@@ -94,8 +104,8 @@ export function score(
   const view = buildRecordView(record);
   const ratings = FACTOR_KEYS.map((factor) => rateFactor(factor, view, config));
 
-  const meanLikelihood = round2(weightedMean(ratings, "likelihood"));
-  const meanConsequence = round2(weightedMean(ratings, "consequence"));
+  const likelihoodIndex = round2(weightedMean(ratings, "likelihood"));
+  const consequenceIndex = round2(topTwoMean(ratings));
   const composite = round2(
     ratings.reduce((total, rating) => total + rating.weight * rating.likelihood * rating.consequence, 0)
   );
@@ -103,9 +113,9 @@ export function score(
 
   return {
     score: composite,
-    cell: toCell(meanLikelihood, meanConsequence, config.matrixSplitAt),
-    meanLikelihood,
-    meanConsequence,
+    cell: toCell(likelihoodIndex, consequenceIndex, config.matrixSplitAt),
+    likelihoodIndex,
+    consequenceIndex,
     ratings,
     coverageGapUsd: view.derived.coverageGapUsd,
     needsReview: flags.length > 0,
@@ -189,9 +199,21 @@ function weightedMean(ratings: readonly FactorRating[], axis: "likelihood" | "co
   return ratings.reduce((total, rating) => total + rating.weight * rating[axis], 0);
 }
 
-function toCell(meanLikelihood: number, meanConsequence: number, splitAt: number): MatrixCell {
-  const highLikelihood = meanLikelihood > splitAt;
-  const highConsequence = meanConsequence > splitAt;
+/**
+ * Mean of the two highest factor consequences. A single severe factor keeps
+ * the consequence axis high; ten benign factors keep it low.
+ */
+function topTwoMean(ratings: readonly FactorRating[]): number {
+  const topTwo = ratings
+    .map((rating) => rating.consequence)
+    .sort((a, b) => b - a)
+    .slice(0, 2);
+  return topTwo.reduce((sum, value) => sum + value, 0) / topTwo.length;
+}
+
+function toCell(likelihoodIndex: number, consequenceIndex: number, splitAt: number): MatrixCell {
+  const highLikelihood = likelihoodIndex > splitAt;
+  const highConsequence = consequenceIndex > splitAt;
   if (highLikelihood && highConsequence) {
     return "HH";
   }
