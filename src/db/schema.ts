@@ -48,6 +48,9 @@ export const shipments = pgTable("shipments", {
   confirmedFactors: jsonb("confirmed_factors").$type<string[]>().notNull().default([]),
   // Fit-matrix carrier id chosen at the Scored → Actioned transition.
   actionedCarrierId: text("actioned_carrier_id"),
+  // Fit-matrix insurance product id chosen at the same transition — either
+  // pick, or both, may complete it.
+  actionedInsuranceProductId: text("actioned_insurance_product_id"),
   // Post-action projected position (spec state table): the record re-scored
   // with the chosen carrier's attributes substituted in. Stored at pick
   // time; the record's own intakeData and profile stay untouched.

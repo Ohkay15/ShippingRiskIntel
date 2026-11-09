@@ -4,31 +4,41 @@ import { db } from "@/db";
 import { shipments } from "@/db/schema";
 import type { ShipmentStatus } from "@/db/lifecycle";
 import { canTransition } from "@/lifecycle/machine";
-import { buildActionedProjection } from "@/lifecycle/actioned-projection";
+import {
+  buildActionedProjectionFromPicks,
+  type PicksActionedProjection,
+} from "@/lifecycle/actioned-projection";
 import type { FactorKey } from "@/schemas/shipment";
 import { shipmentIntakeSchema } from "@/schemas/shipment";
-import type { ActionedProjection } from "@/lifecycle/actioned-projection";
 
 export type ActionedOutcome =
-  | { ok: true; status: ShipmentStatus; projection: ActionedProjection }
+  | { ok: true; status: ShipmentStatus; projection: PicksActionedProjection }
   | { ok: false; message: string };
+
+/** Either pick — or both — can complete the Scored → Actioned transition. */
+export interface ActionedPickRequest {
+  carrierRecommendationId?: string | null;
+  insuranceProductId?: string | null;
+}
 
 /**
  * The Scored → Actioned transition (spec state table: "Profile locked with
  * chosen carrier; post-action score"). The guard is real: only a Scored
- * record can be actioned, a carrier id is required, and the carrier must
- * exist in the fit matrix and match the record. The projection is the pure
- * engine re-scoring the record with the carrier's attributes substituted —
- * stored alongside the record; the record's own data is never mutated.
+ * record can be actioned, at least one pick is required, and every pick
+ * must exist in its fit matrix and match the record. A carrier pick, an
+ * insurance product pick, or both may be recorded on the record in one
+ * transition. The projection is the pure engine re-scoring the record with
+ * the picks' attributes substituted — stored alongside the record; the
+ * record's own data is never mutated.
  */
-export async function markActioned(
-  id: string,
-  carrierRecommendationId: string
-): Promise<ActionedOutcome> {
-  if (!carrierRecommendationId.trim()) {
+export async function markActioned(id: string, picks: ActionedPickRequest): Promise<ActionedOutcome> {
+  const carrierRecommendationId = picks.carrierRecommendationId?.trim() || null;
+  const insuranceProductId = picks.insuranceProductId?.trim() || null;
+
+  if (!carrierRecommendationId && !insuranceProductId) {
     return {
       ok: false,
-      message: "A carrier recommendation id is required to action a record.",
+      message: "A carrier or insurance product pick is required to action a record.",
     };
   }
 
@@ -69,10 +79,10 @@ export async function markActioned(
     };
   }
 
-  const outcome = buildActionedProjection(
+  const outcome = buildActionedProjectionFromPicks(
     intake.data,
     record.profile,
-    carrierRecommendationId.trim(),
+    { carrierId: carrierRecommendationId, insuranceProductId },
     new Set(record.confirmedFactors as readonly FactorKey[])
   );
   if (!outcome.ok) {
@@ -84,7 +94,8 @@ export async function markActioned(
     .update(shipments)
     .set({
       status: "actioned",
-      actionedCarrierId: projection.carrier.id,
+      actionedCarrierId: projection.carrier?.id ?? null,
+      actionedInsuranceProductId: projection.insuranceProduct?.id ?? null,
       projectedProfile: projection.projectedProfile,
       updatedAt: new Date(),
     })

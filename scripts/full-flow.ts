@@ -108,7 +108,7 @@ async function main(): Promise<void> {
 
     step(7, "Pick the top recommendation: Scored → Actioned");
     const top = recommendations[0];
-    const actioned = await markActioned(FLOW_ID, top.carrier.id);
+    const actioned = await markActioned(FLOW_ID, { carrierRecommendationId: top.carrier.id });
     if (!actioned.ok) fail(`pick refused: ${actioned.message}`);
     const final = await recordOf(db);
     assert(final.status === "actioned", "record is Actioned");

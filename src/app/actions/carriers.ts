@@ -20,7 +20,7 @@ export async function pickCarrierRecommendation(
   _prev: PickCarrierState,
   _formData: FormData
 ): Promise<PickCarrierState> {
-  const outcome = await markActioned(shipmentId, carrierId);
+  const outcome = await markActioned(shipmentId, { carrierRecommendationId: carrierId });
   if (!outcome.ok) {
     return { status: "error", message: outcome.message };
   }
