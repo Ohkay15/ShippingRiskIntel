@@ -103,6 +103,12 @@
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
+
+  /* ---- Motion: subtle and fast only (150–250ms, gentle ease-out) ---- */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 250ms;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 * {
@@ -244,7 +250,7 @@ code {
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: color 150ms ease;
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
 .site-nav-links a:not(.button-primary):hover {
@@ -321,11 +327,11 @@ button[type="submit"] {
   border: 1px solid transparent;
   white-space: nowrap;
   transition:
-    background 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
+    background var(--motion-base) var(--ease-out),
+    border-color var(--motion-base) var(--ease-out),
+    color var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out);
 }
 
 .button-primary,
@@ -452,7 +458,7 @@ button[type="submit"]:disabled {
   color: var(--text-primary);
   font-weight: 550;
   text-decoration: none;
-  transition: color 150ms ease;
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
 .record-id:hover {
@@ -469,7 +475,7 @@ button[type="submit"]:disabled {
 .sort-link {
   color: inherit;
   text-decoration: none;
-  transition: color 150ms ease;
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
 .sort-link:hover {
@@ -685,7 +691,7 @@ button[type="submit"]:disabled {
 }
 
 .factor-table tbody tr {
-  transition: background 150ms ease;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 
 .factor-table tbody tr:hover {
@@ -758,7 +764,7 @@ button[type="submit"]:disabled {
   border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow-card);
-  transition: border-color 200ms ease, background 200ms ease;
+  transition: border-color var(--motion-base) var(--ease-out), background var(--motion-base) var(--ease-out);
 }
 
 .review-entry:hover {
@@ -778,7 +784,7 @@ button[type="submit"]:disabled {
   color: var(--text-primary);
   font-weight: 550;
   text-decoration: none;
-  transition: color 150ms ease;
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
 .shipment-link:hover {
@@ -953,7 +959,7 @@ button[type="submit"]:disabled {
 }
 
 .shipments-table tbody tr {
-  transition: background 150ms ease;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 
 .shipments-table tbody tr:hover {
@@ -1023,7 +1029,7 @@ button[type="submit"]:disabled {
   background: var(--surface-inset);
   color: var(--text-primary);
   width: 100%;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
 }
 
 .field input[type="text"]:hover,
@@ -1109,7 +1115,7 @@ button[type="submit"]:disabled {
   padding: 1.25rem 1.5rem;
   margin: 0;
   box-shadow: var(--shadow-card);
-  transition: border-color 200ms ease, transform 200ms ease;
+  transition: border-color var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out);
 }
 
 .factor-card:hover {
@@ -1220,7 +1226,7 @@ button[type="submit"]:disabled {
   font: inherit;
   font-size: 0.8125rem;
   cursor: pointer;
-  transition: background 150ms ease;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 
 .upload-row input[type="file"]::file-selector-button:hover {
@@ -1267,7 +1273,7 @@ button[type="submit"]:disabled {
   flex-direction: column;
   gap: 0.75rem;
   box-shadow: var(--shadow-card);
-  transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  transition: border-color var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out);
 }
 
 .carrier-card:hover {
@@ -1339,4 +1345,24 @@ button[type="submit"]:disabled {
 
 .carrier-panel {
   margin-top: 0.5rem;
+}
+
+/* ---- Reduced motion: honor the OS preference — no movement at all ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .button-primary:hover,
+  .button-secondary:hover,
+  button[type="submit"]:not(:disabled):hover,
+  .carrier-card:hover,
+  .factor-card:hover {
+    transform: none;
+  }
 }
