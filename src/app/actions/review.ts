@@ -10,6 +10,7 @@ import { intakePayloadFromFormData } from "@/intake/form-data";
 import { fieldErrorsFromZod } from "@/intake/form-errors";
 import type { IntakeFormState } from "@/intake/form-state";
 import { mergeIntakeOverlay } from "@/profile/record-edit";
+import { canResolveReview } from "@/lifecycle/machine";
 import {
   FACTOR_KEYS,
   shipmentIntakeSchema,
@@ -46,7 +47,7 @@ export async function resolveReviewRecord(
       fieldErrors: {},
     };
   }
-  if (record.status !== "needs_review") {
+  if (!canResolveReview(record.status)) {
     return {
       status: "error",
       message: `Record is ${record.status}; only records in Needs review can be resolved here.`,

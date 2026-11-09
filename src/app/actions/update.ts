@@ -11,6 +11,11 @@ import { applyRecordEdit } from "@/profile/record-edit";
 import type { IntakeFormState } from "@/intake/form-state";
 import { confirmedFactorsToSchema } from "@/profile/confirmed-factors";
 import {
+  canConfirmRecord,
+  canEditRecord,
+  editRefusalMessage,
+} from "@/lifecycle/machine";
+import {
   FACTOR_KEYS,
   shipmentIntakeSchema,
   type FactorKey,
@@ -59,15 +64,8 @@ export async function updateRecord(
   if (!record) {
     return ERROR_STATE("Record not found. It may have been deleted.");
   }
-  if (record.status === "actioned") {
-    return ERROR_STATE(
-      "This record is actioned (carrier selected) and locked. Reopen it before editing."
-    );
-  }
-  if (record.status === "extracting") {
-    return ERROR_STATE(
-      "Extraction is in progress for this record. Wait for it to finish or cancel it first."
-    );
+  if (!canEditRecord(record.status)) {
+    return ERROR_STATE(editRefusalMessage(record.status));
   }
 
   const outcome = applyRecordEdit(record.intakeData, formData);
@@ -114,7 +112,7 @@ export async function confirmAndScore(
   if (!record) {
     return ERROR_STATE("Record not found. It may have been deleted.");
   }
-  if (record.status !== "draft") {
+  if (!canConfirmRecord(record.status)) {
     return ERROR_STATE(
       `Record is ${record.status}; only draft records can be confirmed for scoring.`
     );
@@ -146,7 +144,7 @@ export async function confirmRecordChanges(id: string): Promise<void> {
     .where(eq(shipments.id, id))
     .limit(1);
 
-  if (!record || record.status === "actioned" || record.status === "extracting") {
+  if (!record || !canEditRecord(record.status)) {
     return;
   }
 
