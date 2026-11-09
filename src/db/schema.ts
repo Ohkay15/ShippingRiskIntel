@@ -46,6 +46,12 @@ export const shipments = pgTable("shipments", {
   // the review queue (spec: "Accept, correct, or fill fields"). Only ever
   // applies while the factor's required data is still missing.
   confirmedFactors: jsonb("confirmed_factors").$type<string[]>().notNull().default([]),
+  // Fit-matrix carrier id chosen at the Scored → Actioned transition.
+  actionedCarrierId: text("actioned_carrier_id"),
+  // Post-action projected position (spec state table): the record re-scored
+  // with the chosen carrier's attributes substituted in. Stored at pick
+  // time; the record's own intakeData and profile stay untouched.
+  projectedProfile: jsonb("projected_profile").$type<RiskProfile>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
