@@ -361,15 +361,12 @@ export const DEFAULT_SCORING_CONFIG: ScoringConfig = scoringConfigSchema.parse({
         },
         {
           id: "live_clear",
+          // An explicit "none_reported" pick — not an empty array. An untouched
+          // draft must fall through to the flagged default, never read as clear.
           when: {
-            or: [
-              {
-                field: "record.live_conditions.conditions",
-                op: "contains",
-                value: "none_reported",
-              },
-              { field: "derived.activeDisruptionCount", op: "lte", value: 0 },
-            ],
+            field: "record.live_conditions.conditions",
+            op: "contains",
+            value: "none_reported",
           },
           likelihood: 1,
           consequence: 1,
