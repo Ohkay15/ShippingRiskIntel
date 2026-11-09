@@ -34,6 +34,30 @@ export function applyRecordEdit(
 }
 
 /**
+ * Overlay a partial wire payload onto a stored intake. Used by the review
+ * queue: its form submits only the flagged fields, so every unposted field
+ * keeps the stored value and a posted-but-empty field reads as unknown.
+ * Pure — the result goes back through the shared schema before storage.
+ */
+export function mergeIntakeOverlay(
+  previous: ShipmentIntake,
+  overlay: Record<string, unknown>
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = {};
+  const groups = previous as unknown as Record<string, Record<string, unknown>>;
+  for (const [group, fields] of Object.entries(groups)) {
+    const overlayGroup = overlay[group];
+    merged[group] = {
+      ...fields,
+      ...(typeof overlayGroup === "object" && overlayGroup !== null
+        ? overlayGroup
+        : {}),
+    };
+  }
+  return merged;
+}
+
+/**
  * Equality over schema-validated intakes. Schema leaves are optional, so a
  * form-produced intake omits empty keys while a stored one may carry
  * explicit nulls — both mean "unknown". The canonicalizer folds

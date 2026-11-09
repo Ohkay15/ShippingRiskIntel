@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { buildDemoDataset } from "@/scoring/demo-seed";
 import type { ShipmentIntake } from "@/schemas/shipment";
-import { applyRecordEdit, intakeEquals } from "./record-edit";
+import {
+  applyRecordEdit,
+  intakeEquals,
+  mergeIntakeOverlay,
+} from "./record-edit";
 
 const CLEAN: ShipmentIntake = buildDemoDataset()[0].intakeData;
 
@@ -31,6 +35,29 @@ function fullWireForm(intake: ShipmentIntake): FormData {
   }
   return formData;
 }
+
+describe("mergeIntakeOverlay", () => {
+  it("keeps stored values for fields the queue form did not post", () => {
+    const merged = mergeIntakeOverlay(CLEAN, {
+      cargo_hazard: { cargoDescription: "Corrected description" },
+    });
+    const parsed = merged as ShipmentIntake;
+    expect(parsed.cargo_hazard.cargoDescription).toBe("Corrected description");
+    expect(parsed.cargo_hazard.hsCode).toBe(CLEAN.cargo_hazard.hsCode);
+    expect(parsed.carrier_record.carrierName).toBe(
+      CLEAN.carrier_record.carrierName
+    );
+  });
+
+  it("applies an emptied posted field as unknown, not stale", () => {
+    const merged = mergeIntakeOverlay(CLEAN, {
+      route_lane: { origin: undefined },
+    });
+    const parsed = merged as ShipmentIntake;
+    expect(parsed.route_lane.origin).toBeUndefined();
+    expect(parsed.route_lane.destination).toBe(CLEAN.route_lane.destination);
+  });
+});
 
 describe("applyRecordEdit", () => {
   it("accepts a valid full replacement and detects no change when identical", () => {
