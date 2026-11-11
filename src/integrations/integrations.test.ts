@@ -57,7 +57,7 @@ describe("catalog", () => {
     const ids = CONNECTORS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     const keyless = CONNECTORS.filter((c) => c.requiredEnv.length === 0).map((c) => c.id);
-    expect(keyless).toEqual(["mcp"]);
+    expect(keyless).toEqual(["openfreemap", "nexrad_radar", "nws_alerts", "gdelt_news", "nominatim", "mcp"]);
   });
 
   it("derives status from the environment", () => {
@@ -77,7 +77,7 @@ describe("catalog", () => {
     const slack = report.flatMap((g) => g.connectors).find((c) => c.def.id === "slack")!;
     expect(slack.status).toBe("connected");
     expect(slack.missingEnv).toEqual([]);
-    expect(statusCounts(report).connected).toBe(2); // slack + always-on MCP
+    expect(statusCounts(report).connected).toBe(7); // slack + always-on MCP + 5 free public data sources
   });
 });
 

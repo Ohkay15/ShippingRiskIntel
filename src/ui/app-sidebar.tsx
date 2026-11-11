@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { IconPlug, IconPlus, IconReview, IconRoute, IconShipments, IconSpark } from "./icons";
+import { IconMap, IconPlug, IconPlus, IconReview, IconRoute, IconShipments, IconSpark } from "./icons";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -13,6 +13,7 @@ function initials(name: string): string {
 const NAV = [
   { href: "/", label: "Shipments", icon: IconShipments, match: (p: string) => p === "/" || (p.startsWith("/shipments/") && p !== "/shipments/new") },
   { href: "/review", label: "Review queue", icon: IconReview, match: (p: string) => p.startsWith("/review") },
+  { href: "/map", label: "Live map", icon: IconMap, match: (p: string) => p.startsWith("/map") },
   { href: "/assistant", label: "Assistant", icon: IconSpark, match: (p: string) => p.startsWith("/assistant") },
   { href: "/integrations", label: "Integrations", icon: IconPlug, match: (p: string) => p.startsWith("/integrations") },
 ] as const;
