@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -11,6 +12,7 @@ import { FACTOR_GROUP_META } from "@/intake/form-fields";
 import { FACTOR_KEYS, shipmentIntakeSchema, type FactorKey } from "@/schemas/shipment";
 import { recordSummary } from "@/profile/view-model";
 import { StatusBadge } from "@/ui/status-badge";
+import { displayShipmentId } from "@/dashboard/record-id";
 import { ReviewResolveForm } from "./review-resolve-form";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +25,7 @@ export const dynamic = "force-dynamic";
  * record immediately.
  */
 export default async function ReviewQueuePage() {
+  await requireUser();
   let rows: {
     id: string;
     status: ShipmentStatus;
@@ -123,8 +126,8 @@ function ReviewQueueEntry({
   return (
     <li className="review-entry">
       <header className="review-entry-header">
-        <Link href={`/shipments/${row.id}`} className="shipment-link mono">
-          {row.id}
+        <Link href={`/shipments/${row.id}`} className="shipment-link" title={row.id}>
+          {displayShipmentId(row.id)}
         </Link>
         <StatusBadge status={row.status} />
         <span className="flag-count">

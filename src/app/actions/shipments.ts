@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUser } from "@/auth/session";
 import { redirect } from "next/navigation";
 
 import { db } from "@/db";
@@ -19,6 +20,7 @@ export async function createShipment(
   _prev: IntakeFormState,
   formData: FormData
 ): Promise<IntakeFormState> {
+  await requireUser();
   const payload = intakePayloadFromFormData(formData);
   const parsed = shipmentIntakeSchema.safeParse(payload);
 

@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUser } from "@/auth/session";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -24,6 +25,7 @@ export async function resolveReviewRecord(
   _prev: IntakeFormState,
   formData: FormData
 ): Promise<IntakeFormState> {
+  await requireUser();
   const overlay = intakePayloadFromFormData(formData);
   const confirmed: FactorKey[] = [];
   for (const key of FACTOR_KEYS) {

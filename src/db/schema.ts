@@ -5,6 +5,8 @@ import {
   uuid,
   timestamp,
   jsonb,
+  integer,
+  index,
 } from "drizzle-orm/pg-core";
 import { shipmentIntakeSchema, type ShipmentIntake } from "../schemas/shipment";
 import type { RiskProfile } from "../scoring/engine";
@@ -83,3 +85,69 @@ export const shipmentDocuments = pgTable("shipment_documents", {
     .notNull()
     .defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
+
+export const userRoleEnum = pgEnum("user_role", ["owner", "member"]);
+
+/**
+ * A person who can sign in. One shared workspace: every signed-in user sees
+ * every shipment. The first account becomes the owner; later accounts join
+ * through the sign-up policy (invite code or open sign-up).
+ */
+export const users = pgTable("users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  /** Stored lowercased and trimmed; unique. */
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  /** scrypt$N$r$p$salt$hash — see src/auth/password.ts. */
+  passwordHash: text("password_hash").notNull(),
+  role: userRoleEnum("role").notNull().default("member"),
+  /** Consecutive failed sign-ins; reset on success. */
+  failedSignIns: integer("failed_sign_ins").notNull().default(0),
+  /** Sign-in refused until this time after too many failures. */
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * A signed-in browser. The cookie carries a random token; only its SHA-256
+ * is stored, so a database leak cannot be replayed as a session.
+ */
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("sessions_user_id_idx").on(t.userId)]
+);
+
+/**
+ * Personal API keys — what an MCP client (Claude, ChatGPT, agents) or a
+ * script presents as a bearer token. Shown once at creation; only the
+ * SHA-256 is stored, plus a short prefix so the owner can tell keys apart.
+ */
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    keyHash: text("key_hash").notNull().unique(),
+    prefix: text("prefix").notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("api_keys_user_id_idx").on(t.userId)]
+);

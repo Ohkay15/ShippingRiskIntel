@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import Link from "next/link";
 
 import { createShipment } from "@/app/actions/shipments";
@@ -7,7 +8,8 @@ export const metadata = {
   title: "New shipment — ShippingRiskIntel",
 };
 
-export default function NewShipmentPage() {
+export default async function NewShipmentPage() {
+  await requireUser();
   return (
     <main className="page">
       <header className="page-header">

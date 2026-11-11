@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUser } from "@/auth/session";
 import { redirect } from "next/navigation";
 
 import { db } from "@/db";
@@ -19,6 +20,7 @@ export async function uploadDocument(
   _prev: UploadState,
   formData: FormData
 ): Promise<UploadState> {
+  await requireUser();
   const kindRaw = formData.get("kind");
   const kind = documentKindSchema.safeParse(kindRaw);
   if (!kind.success) {

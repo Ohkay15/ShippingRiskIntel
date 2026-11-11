@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,21 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body>
-        <nav className="site-nav">
-          <Link href="/" className="site-nav-brand">
-            ShippingRiskIntel
-          </Link>
-          <div className="site-nav-links">
-            <Link href="/">Shipments</Link>
-            <Link href="/review">Review queue</Link>
-            <Link href="/shipments/new" className="button-primary">
-              + New shipment
-            </Link>
-          </div>
-        </nav>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

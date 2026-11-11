@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 
@@ -20,6 +21,7 @@ export default async function EditShipmentPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireUser();
   const { id } = await params;
 
   let status: ShipmentStatus | undefined;
