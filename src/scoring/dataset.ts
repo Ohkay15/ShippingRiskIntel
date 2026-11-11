@@ -70,31 +70,31 @@ const CARRIERS = {
   /** Placeholder seed carriers — real fit-matrix content comes from the owner. */
   heartland: {
     carrierId: "car-001",
-    carrierName: "Heartland Freight Lines",
+    carrierName: "Seed Carrier 1",
     carrierSafetyRating: 1,
     carrierClaimsRating: 1,
   },
   midwest: {
     carrierId: "car-014",
-    carrierName: "Midwest Freight Lines",
+    carrierName: "Seed Carrier 2",
     carrierSafetyRating: 2,
     carrierClaimsRating: 2,
   },
   blue_ridge: {
     carrierId: "car-027",
-    carrierName: "Blue Ridge Transport",
+    carrierName: "Seed Carrier 3",
     carrierSafetyRating: 3,
     carrierClaimsRating: 3,
   },
   coastal: {
     carrierId: "car-055",
-    carrierName: "Coastal Cartage",
+    carrierName: "Seed Carrier 4",
     carrierSafetyRating: 4,
     carrierClaimsRating: 3,
   },
   redline: {
     carrierId: "car-042",
-    carrierName: "Redline Overnight",
+    carrierName: "Seed Carrier 5",
     carrierSafetyRating: 5,
     carrierClaimsRating: 5,
   },

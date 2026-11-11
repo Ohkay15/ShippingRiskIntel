@@ -19,7 +19,7 @@ DG Cert Present: no
 Cert Expiry Date: 2027-06-30
 
 Carrier ID: car-001
-Carrier: Midwest Freight Lines
+Carrier: Seed Carrier 2
 Safety Rating: 2
 Claims Rating: 3
 

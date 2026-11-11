@@ -20,7 +20,7 @@ function fullWireValues(): Record<string, string | string[]> {
     "packing_certs.dgCertPresent": "false",
     "packing_certs.certExpiryDate": "2027-06-30",
     "carrier_record.carrierId": "car-001",
-    "carrier_record.carrierName": "Midwest Freight Lines",
+    "carrier_record.carrierName": "Seed Carrier 2",
     "carrier_record.carrierSafetyRating": "2",
     "carrier_record.carrierClaimsRating": "3",
     "route_lane.origin": "Chicago, IL",
@@ -82,7 +82,7 @@ describe("intake form round-trip", () => {
     });
     expect(parsed.carrier_record).toEqual({
       carrierId: "car-001",
-      carrierName: "Midwest Freight Lines",
+      carrierName: "Seed Carrier 2",
       carrierSafetyRating: 2,
       carrierClaimsRating: 3,
     });

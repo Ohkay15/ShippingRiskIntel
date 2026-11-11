@@ -85,7 +85,7 @@ export function limitGuidanceView(
 
 export interface InsuranceProductView {
   productId: string;
-  /** "Chubb — Marine Cargo": insurer and product in one line. */
+  /** "Insurer A — Marine Cargo": insurer and product in one line. */
   title: string;
   liabilityTerms: string;
   notes: string | null;

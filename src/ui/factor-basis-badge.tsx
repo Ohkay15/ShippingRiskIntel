@@ -1,7 +1,7 @@
 import type { FactorBasisView } from "@/profile/view-model";
 
 /**
- * The chip that says where a factor rating came from — Reform's
+ * The chip that says where a factor rating came from — the product's
  * explainability stance rendered: the system presents its case.
  */
 

@@ -23,7 +23,7 @@ function rawRecord(overrides: Partial<ShipmentIntake> = {}): Partial<ShipmentInt
     },
     carrier_record: {
       carrierId: "car-001",
-      carrierName: "Midwest Freight Lines",
+      carrierName: "Seed Carrier 2",
       carrierSafetyRating: 2,
       carrierClaimsRating: 2,
     },
