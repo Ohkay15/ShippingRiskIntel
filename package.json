@@ -9,6 +9,7 @@
     "fullflow": "tsx scripts/full-flow.ts",
     "timing": "tsx scripts/timing-check.ts",
     "build": "next build",
+    "vercel-build": "drizzle-kit push --force && tsx scripts/seed.ts --if-empty && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

@@ -99,5 +99,9 @@ deployment). Call sites only ever see the typed `LlmClient` interface.
 
 Push to the connected repo and set two env vars in the Vercel project:
 `DATABASE_URL` (Neon connection string) and, if used, the LLM provider
-variables. Nothing else differs from local — the schema applies with
-`pnpm db:push` pointed at the Neon URL.
+variables. Nothing else differs from local.
+
+Vercel runs the `vercel-build` script instead of `build`. It applies the
+schema (`drizzle-kit push`), seeds the 40-record demo dataset **only if the
+shipments table is empty**, then runs `next build` — so a fresh database is
+ready after one deploy, and later deploys never overwrite edited records.
