@@ -6,6 +6,7 @@ import type { FactorKey } from "@/schemas/shipment";
 import { shipmentIntakeSchema } from "@/schemas/shipment";
 import { DEFAULT_SCORING_CONFIG } from "./config";
 import { score, type RiskProfile } from "./engine";
+import { emitRiskEvent } from "@/integrations/publish";
 
 /**
  * The scoring gateway between the record store and the profile store. Runs
@@ -58,6 +59,10 @@ export async function scoreShipmentRecord(id: string): Promise<ScoreOutcome> {
     .update(shipments)
     .set({ profile, status, scoredAt: new Date(), updatedAt: new Date() })
     .where(eq(shipments.id, id));
+
+  // Fan out to connected sinks (CRM, Slack/Teams, webhooks). A no-op when
+  // none are configured; never fails the scoring write above.
+  await emitRiskEvent("shipment.scored", id, intake.data, profile);
 
   return { status, profile };
 }

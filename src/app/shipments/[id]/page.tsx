@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { displayShipmentId } from "@/dashboard/record-id";
 import { desc, eq } from "drizzle-orm";
 
 import { uploadDocument } from "@/app/actions/documents";
@@ -175,11 +176,19 @@ export default async function ShipmentPage({
     <main className="page">
       <header className="page-header">
         <div>
-          <h1>Shipment record</h1>
+          <h1>Shipment {displayShipmentId(record.id)}</h1>
           <p className="mono">{record.id}</p>
         </div>
         <div className="page-header-actions">
           <StatusBadge status={record.status} />
+          {record.profile && (
+            <Link
+              href={`/assistant?q=${encodeURIComponent(`Explain ${displayShipmentId(record.id).startsWith("SH-") ? displayShipmentId(record.id) : record.id}`)}`}
+              className="button-secondary"
+            >
+              Ask about this
+            </Link>
+          )}
           {record.status !== "actioned" && record.status !== "extracting" && (
             <Link href={`/shipments/${record.id}/edit`} className="button-secondary">
               Edit &amp; re-score

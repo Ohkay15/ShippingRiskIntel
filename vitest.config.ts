@@ -9,6 +9,8 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  // Next compiles JSX with the automatic runtime; tests do the same.
+  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
   },

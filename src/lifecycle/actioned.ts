@@ -10,6 +10,7 @@ import {
 } from "@/lifecycle/actioned-projection";
 import type { FactorKey } from "@/schemas/shipment";
 import { shipmentIntakeSchema } from "@/schemas/shipment";
+import { emitRiskEvent } from "@/integrations/publish";
 
 export type ActionedOutcome =
   | { ok: true; status: ShipmentStatus; projection: PicksActionedProjection }
@@ -100,6 +101,8 @@ export async function markActioned(id: string, picks: ActionedPickRequest): Prom
       updatedAt: new Date(),
     })
     .where(eq(shipments.id, id));
+
+  await emitRiskEvent("shipment.actioned", id, intake.data, projection.projectedProfile);
 
   return { ok: true, status: "actioned", projection };
 }

@@ -22,6 +22,7 @@ import type { RiskProfile } from "@/scoring/engine";
 import { DemoDatasetButton } from "@/ui/demo-dataset-button";
 import { MatrixCellBadge, ScoreBadge } from "@/ui/risk-badges";
 import { StatusBadge } from "@/ui/status-badge";
+import { displayShipmentId } from "@/dashboard/record-id";
 
 export const dynamic = "force-dynamic";
 
@@ -100,15 +101,15 @@ export default async function Home({
             between declared value and coverage. The riskiest exposure leads.
           </p>
         </div>
-        <Link href="/shipments/new" className="button-primary">
-          + New shipment
-        </Link>
+        <div className="header-actions">
+          <Link href="/assistant" className="button-secondary">
+            Ask the assistant
+          </Link>
+          <Link href="/shipments/new" className="button-primary">
+            New shipment
+          </Link>
+        </div>
       </header>
-
-      <p className="page-subtitle page-links">
-        <Link href="/review">Review queue</Link> — records waiting on human
-        judgment.
-      </p>
 
       {rows.length === 0 ? (
         <div className="state-panel">
@@ -145,8 +146,8 @@ export default async function Home({
             {sorted.map((row) => (
               <tr key={row.id}>
                 <td>
-                  <Link href={`/shipments/${row.id}`} className="mono record-id">
-                    {row.id}
+                  <Link href={`/shipments/${row.id}`} className="record-id" title={row.id}>
+                    {displayShipmentId(row.id)}
                   </Link>
                   {row.cargoDescription && (
                     <span className="record-desc">
@@ -235,16 +236,13 @@ function DatabaseUnavailable() {
             Score every shipment, explain it, and surface the coverage gap.
           </p>
         </div>
-        <Link href="/shipments/new" className="button-primary">
-          + New shipment
-        </Link>
       </header>
       <div className="state-panel state-error">
         <h2>Database unavailable</h2>
         <p>
           The shipment list could not be loaded because the database is not
-          reachable. Start Postgres with <code>docker compose up -d</code> and
-          retry.
+          reachable. Check that <code>DATABASE_URL</code> is set (locally:
+          start Postgres with <code>docker compose up -d</code>) and retry.
         </p>
       </div>
     </main>
