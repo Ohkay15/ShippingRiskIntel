@@ -28,7 +28,7 @@ function rawRecord(overrides: Partial<ShipmentIntake> = {}): Partial<ShipmentInt
     },
     carrier_record: {
       carrierId: "car-001",
-      carrierName: "Midwest Freight Lines",
+      carrierName: "Seed Carrier 2",
       carrierSafetyRating: 2,
       carrierClaimsRating: 2,
     },
@@ -72,7 +72,7 @@ function hazardRecord(overrides: Partial<ShipmentIntake> = {}): ShipmentIntake {
     },
     carrier_record: {
       carrierId: "car-666",
-      carrierName: "Redline Overnight",
+      carrierName: "Seed Carrier 5",
       carrierSafetyRating: 5,
       carrierClaimsRating: 5,
     },
@@ -248,7 +248,7 @@ describe("score — matrix cell", () => {
       cleanRecord({
         carrier_record: {
           carrierId: "car-001",
-          carrierName: "Heartland Freight Lines",
+          carrierName: "Seed Carrier 1",
           carrierSafetyRating: 1,
           carrierClaimsRating: 1,
         },

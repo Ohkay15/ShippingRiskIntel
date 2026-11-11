@@ -25,3 +25,11 @@ next-env.d.ts
 
 # drizzle
 /drizzle/meta
+
+# test coverage
+/coverage
+
+# editors / logs
+.idea/
+.vscode/
+*.log

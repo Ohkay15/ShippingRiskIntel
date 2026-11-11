@@ -10,10 +10,10 @@ import { actionedPickInputs, pickSelectionError, picksFromFormValues } from "./p
 
 describe("picksFromFormValues", () => {
   it("splits prefixed checkbox values into carrier and insurance ids", () => {
-    const picked = picksFromFormValues(["carrier:odfl", "insurance:chubb-marine"]);
+    const picked = picksFromFormValues(["carrier:carrier-a", "insurance:insurer-a-marine"]);
     expect(picked).toEqual({
-      carrierIds: ["odfl"],
-      insuranceIds: ["chubb-marine"],
+      carrierIds: ["carrier-a"],
+      insuranceIds: ["insurer-a-marine"],
     });
   });
 
@@ -56,20 +56,20 @@ describe("pickSelectionError", () => {
 
 describe("actionedPickInputs", () => {
   it("maps a combined selection onto both markActioned inputs", () => {
-    expect(actionedPickInputs({ carrierIds: ["odfl"], insuranceIds: ["chubb-marine"] })).toEqual({
-      carrierRecommendationId: "odfl",
-      insuranceProductId: "chubb-marine",
+    expect(actionedPickInputs({ carrierIds: ["carrier-a"], insuranceIds: ["insurer-a-marine"] })).toEqual({
+      carrierRecommendationId: "carrier-a",
+      insuranceProductId: "insurer-a-marine",
     });
   });
 
   it("maps a single-side selection with a null on the other layer", () => {
-    expect(actionedPickInputs({ carrierIds: ["odfl"], insuranceIds: [] })).toEqual({
-      carrierRecommendationId: "odfl",
+    expect(actionedPickInputs({ carrierIds: ["carrier-a"], insuranceIds: [] })).toEqual({
+      carrierRecommendationId: "carrier-a",
       insuranceProductId: null,
     });
-    expect(actionedPickInputs({ carrierIds: [], insuranceIds: ["chubb-marine"] })).toEqual({
+    expect(actionedPickInputs({ carrierIds: [], insuranceIds: ["insurer-a-marine"] })).toEqual({
       carrierRecommendationId: null,
-      insuranceProductId: "chubb-marine",
+      insuranceProductId: "insurer-a-marine",
     });
   });
 });

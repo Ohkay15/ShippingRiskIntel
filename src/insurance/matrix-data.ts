@@ -3,8 +3,8 @@ import { insurerFitMatrixSchema, type InsurerFitMatrix } from "./schema";
 /**
  * PLACEHOLDER insurer fit matrix.
  *
- * ⚠️ REPLACE ME: this seed is placeholder content drawn from public
- * knowledge of major insurers' cargo offerings, written to make the
+ * ⚠️ REPLACE ME: this seed is fictional placeholder content (generic
+ * cargo insurance products, no real companies), written to make the
  * insurance recommendation engine demoable. Product names, hazard-class
  * appetite, lane coverage, limits, and liability terms are illustrative,
  * not verified quotes or binding terms. The owner replaces this table with
@@ -13,11 +13,11 @@ import { insurerFitMatrixSchema, type InsurerFitMatrix } from "./schema";
  */
 export const PLACEHOLDER_INSURER_FIT_MATRIX: InsurerFitMatrix = insurerFitMatrixSchema.parse({
   sourceLabel:
-    "Placeholder seed — public-knowledge insurers' cargo offerings with illustrative attributes, pending owner's real insurer table",
+    "Placeholder seed — fictional insurers' cargo offerings with illustrative attributes, pending owner's real insurer table",
   products: [
     {
-      id: "chubb-marine-cargo",
-      insurerName: "Chubb",
+      id: "insurer-a-marine-cargo",
+      insurerName: "Insurer A",
       productName: "Marine Cargo",
       modes: ["ocean", "intermodal", "road", "rail"],
       supportedCargoTypes: ["general_dry", "perishable", "high_value_fragile"],
@@ -29,8 +29,8 @@ export const PLACEHOLDER_INSURER_FIT_MATRIX: InsurerFitMatrix = insurerFitMatrix
         "Broad cargo book with high per-shipment limits and strong claims service — the general-purpose anchor product.",
     },
     {
-      id: "aig-cargo-plus",
-      insurerName: "AIG",
+      id: "insurer-b-cargo-plus",
+      insurerName: "Insurer B",
       productName: "Cargo Plus",
       modes: ["road", "ocean", "air", "intermodal"],
       supportedCargoTypes: ["general_dry", "hazmat", "high_value_fragile"],
@@ -41,8 +41,8 @@ export const PLACEHOLDER_INSURER_FIT_MATRIX: InsurerFitMatrix = insurerFitMatrix
       notes: "Global cargo capability with a dedicated hazmat underwriting practice.",
     },
     {
-      id: "zurich-transport-solution",
-      insurerName: "Zurich",
+      id: "insurer-c-transport-solution",
+      insurerName: "Insurer C",
       productName: "Transport & Cargo Solution",
       modes: ["road", "rail", "intermodal"],
       supportedCargoTypes: ["general_dry", "perishable", "high_value_fragile"],
@@ -53,8 +53,8 @@ export const PLACEHOLDER_INSURER_FIT_MATRIX: InsurerFitMatrix = insurerFitMatrix
       notes: "Inland transit strength with cold-chain endorsements for perishable loads.",
     },
     {
-      id: "allianz-cargo",
-      insurerName: "Allianz",
+      id: "insurer-d-cargo",
+      insurerName: "Insurer D",
       productName: "Cargo & Transport",
       modes: ["road", "ocean", "rail"],
       supportedCargoTypes: ["general_dry", "hazmat", "perishable"],
@@ -65,8 +65,8 @@ export const PLACEHOLDER_INSURER_FIT_MATRIX: InsurerFitMatrix = insurerFitMatrix
       notes: "Mid-market cargo product on a container-liability base.",
     },
     {
-      id: "travelers-inland-marine",
-      insurerName: "Travelers",
+      id: "insurer-e-inland-marine",
+      insurerName: "Insurer E",
       productName: "Inland Marine Cargo",
       modes: ["road"],
       supportedCargoTypes: ["general_dry"],
@@ -77,8 +77,8 @@ export const PLACEHOLDER_INSURER_FIT_MATRIX: InsurerFitMatrix = insurerFitMatrix
       notes: "Straightforward low-risk dry-goods transit cover on domestic road lanes.",
     },
     {
-      id: "axa-xl-cargo",
-      insurerName: "AXA XL",
+      id: "insurer-f-high-value",
+      insurerName: "Insurer F",
       productName: "Cargo Specie & High-Value",
       modes: ["ocean", "air", "intermodal"],
       supportedCargoTypes: ["general_dry", "high_value_fragile"],
@@ -89,8 +89,8 @@ export const PLACEHOLDER_INSURER_FIT_MATRIX: InsurerFitMatrix = insurerFitMatrix
       notes: "Specialty limits for high-value consignments where standard markets cap out.",
     },
     {
-      id: "liberty-mutual-cargo",
-      insurerName: "Liberty Mutual",
+      id: "insurer-g-transit-cargo",
+      insurerName: "Insurer G",
       productName: "Transit Cargo",
       modes: ["road", "rail"],
       supportedCargoTypes: ["general_dry", "hazmat", "perishable"],

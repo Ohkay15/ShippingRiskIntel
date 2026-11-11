@@ -1,5 +1,5 @@
 /**
- * The four document types the MVP accepts (spec §1 / Reform source list).
+ * The four document types the MVP accepts (spec §1 source list).
  * Single source of truth: the DB enum, upload UI, and LLM client all read
  * this list so a kind cannot exist in one layer and not the others.
  */

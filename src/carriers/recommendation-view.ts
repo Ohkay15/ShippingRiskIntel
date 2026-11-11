@@ -71,7 +71,7 @@ export function recommendationViews(
 }
 
 export interface ActionedInsuranceView {
-  /** "Chubb — Marine Cargo", or the raw stored id when the product left the matrix. */
+  /** "Insurer A — Marine Cargo", or the raw stored id when the product left the matrix. */
   label: string;
   found: boolean;
   /** Coverage the pick actually applies (product limit capped by the recommendation); null when unknown. */

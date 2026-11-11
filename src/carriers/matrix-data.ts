@@ -3,8 +3,8 @@ import { carrierFitMatrixSchema, type CarrierFitMatrix } from "./schema";
 /**
  * PLACEHOLDER carrier fit matrix.
  *
- * ⚠️ REPLACE ME: this seed is placeholder content from public knowledge of
- * major US carriers, written to make the recommendation engine demoable.
+ * ⚠️ REPLACE ME: this seed is fictional placeholder content (generic
+ * carrier profiles, no real companies), written to make the recommendation engine demoable.
  * Ratings, liability limits, and insurance figures are illustrative, not
  * verified. The owner replaces this table with their own carrier seed
  * (equipment, hazmat endorsements, lanes, claims record) — the schema in
@@ -12,11 +12,11 @@ import { carrierFitMatrixSchema, type CarrierFitMatrix } from "./schema";
  */
 export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrixSchema.parse({
   sourceLabel:
-    "Placeholder seed — public-knowledge US carriers with illustrative attributes, pending owner's real carrier table",
+    "Placeholder seed — fictional carriers with illustrative attributes, pending owner's real carrier table",
   carriers: [
     {
-      id: "odfl",
-      name: "Old Dominion Freight Line",
+      id: "carrier-a",
+      name: "Carrier A — National LTL",
       modes: ["road", "intermodal"],
       supportedCargoTypes: ["general_dry", "high_value_fragile"],
       maxLaneRisk: "medium",
@@ -27,8 +27,8 @@ export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrix
       notes: "National LTL carrier with a top-tier safety and claims record.",
     },
     {
-      id: "fedex-freight",
-      name: "FedEx Freight",
+      id: "carrier-b",
+      name: "Carrier B — Multimodal LTL",
       modes: ["road", "intermodal", "air"],
       supportedCargoTypes: ["general_dry", "perishable", "high_value_fragile"],
       maxLaneRisk: "medium",
@@ -36,11 +36,11 @@ export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrix
       insuranceOfferingUsd: 100000,
       safetyRating: 1,
       claimsRating: 2,
-      notes: "LTL network with cold-chain and expedite options via the FedEx family.",
+      notes: "LTL network with cold-chain and expedite options via an affiliated parcel network.",
     },
     {
-      id: "estes",
-      name: "Estes Express Lines",
+      id: "carrier-c",
+      name: "Carrier C — Regional LTL",
       modes: ["road"],
       supportedCargoTypes: ["general_dry", "high_value_fragile"],
       maxLaneRisk: "low",
@@ -51,8 +51,8 @@ export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrix
       notes: "Regional LTL strength on eastern US lanes.",
     },
     {
-      id: "xpo",
-      name: "XPO Logistics",
+      id: "carrier-d",
+      name: "Carrier D — North American LTL",
       modes: ["road", "intermodal"],
       supportedCargoTypes: ["general_dry"],
       maxLaneRisk: "medium",
@@ -63,8 +63,8 @@ export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrix
       notes: "North American LTL with broad door coverage.",
     },
     {
-      id: "schneider",
-      name: "Schneider National",
+      id: "carrier-e",
+      name: "Carrier E — Truckload & Intermodal",
       modes: ["road", "intermodal", "rail"],
       supportedCargoTypes: ["general_dry", "hazmat"],
       maxLaneRisk: "high",
@@ -76,8 +76,8 @@ export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrix
       notes: "Large truckload and intermodal carrier with a long-established hazmat practice.",
     },
     {
-      id: "jb-hunt",
-      name: "J.B. Hunt Transport Services",
+      id: "carrier-f",
+      name: "Carrier F — Container Intermodal",
       modes: ["road", "intermodal", "rail"],
       supportedCargoTypes: ["general_dry"],
       maxLaneRisk: "high",
@@ -88,8 +88,8 @@ export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrix
       notes: "Container intermodal at scale on major US rail corridors.",
     },
     {
-      id: "werner",
-      name: "Werner Enterprises",
+      id: "carrier-g",
+      name: "Carrier G — OTR Truckload",
       modes: ["road"],
       supportedCargoTypes: ["general_dry", "hazmat"],
       maxLaneRisk: "high",
@@ -101,8 +101,8 @@ export const PLACEHOLDER_CARRIER_FIT_MATRIX: CarrierFitMatrix = carrierFitMatrix
       notes: "Over-the-road truckload with hazmat-endorsed fleets.",
     },
     {
-      id: "knight-swift",
-      name: "Knight-Swift Transportation",
+      id: "carrier-h",
+      name: "Carrier H — Truckload & Reefer",
       modes: ["road"],
       supportedCargoTypes: ["general_dry", "hazmat", "perishable"],
       maxLaneRisk: "high",
