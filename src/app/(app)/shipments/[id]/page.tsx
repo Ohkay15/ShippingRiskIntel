@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import Link from "next/link";
 import { displayShipmentId } from "@/dashboard/record-id";
 import { desc, eq } from "drizzle-orm";
@@ -62,6 +63,7 @@ export default async function ShipmentPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireUser();
   const { id } = await params;
 
   let record: ShipmentRow | undefined;

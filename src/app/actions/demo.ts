@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUser } from "@/auth/session";
 import { redirect } from "next/navigation";
 import { sql } from "drizzle-orm";
 
@@ -22,6 +23,7 @@ export async function seedDemoDataset(
   _prev: DemoSeedState,
   _formData: FormData
 ): Promise<DemoSeedState> {
+  await requireUser();
   try {
     const rows = buildDemoDataset();
     await db

@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import { getModelClient } from "@/llm/model-client";
 import { processEnv } from "@/integrations/status";
 import { AssistantChat } from "@/ui/assistant-chat";
@@ -9,6 +10,7 @@ export default async function AssistantPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireUser();
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.slice(0, 500) : undefined;
   let modeLabel = "Offline mode";

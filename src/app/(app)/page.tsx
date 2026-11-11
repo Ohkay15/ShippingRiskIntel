@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import Link from "next/link";
 import { desc } from "drizzle-orm";
 
@@ -38,6 +39,7 @@ export default async function Home({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireUser();
   const params = await searchParams;
   const sort = parseSortParams(firstParam(params.sort), firstParam(params.dir));
 

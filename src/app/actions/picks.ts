@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUser } from "@/auth/session";
 import { revalidatePath } from "next/cache";
 
 import { markActioned } from "@/lifecycle/actioned";
@@ -27,6 +28,7 @@ export async function actionWithPicks(
   _prev: ActionPicksState,
   formData: FormData
 ): Promise<ActionPicksState> {
+  await requireUser();
   const picked = picksFromFormValues(formData.getAll("picks").map(String));
   const selectionError = pickSelectionError(picked);
   if (selectionError) {

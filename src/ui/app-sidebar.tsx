@@ -5,6 +5,11 @@ import { usePathname } from "next/navigation";
 
 import { IconPlug, IconPlus, IconReview, IconRoute, IconShipments, IconSpark } from "./icons";
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "")).toUpperCase() || "?";
+}
+
 const NAV = [
   { href: "/", label: "Shipments", icon: IconShipments, match: (p: string) => p === "/" || (p.startsWith("/shipments/") && p !== "/shipments/new") },
   { href: "/review", label: "Review queue", icon: IconReview, match: (p: string) => p.startsWith("/review") },
@@ -12,7 +17,13 @@ const NAV = [
   { href: "/integrations", label: "Integrations", icon: IconPlug, match: (p: string) => p.startsWith("/integrations") },
 ] as const;
 
-export function AppSidebar({ connectedCount }: { connectedCount: number }) {
+export function AppSidebar({
+  connectedCount,
+  user,
+}: {
+  connectedCount: number;
+  user: { name: string; email: string };
+}) {
   const pathname = usePathname() ?? "/";
   return (
     <aside className="sidebar" aria-label="Main">
@@ -39,9 +50,20 @@ export function AppSidebar({ connectedCount }: { connectedCount: number }) {
         ))}
       </nav>
 
-      <div className="sidebar-foot">
-        Score every shipment, explain it, and close the coverage gap.
-      </div>
+      <Link
+        href="/settings"
+        className="sidebar-user"
+        aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+        title="Account settings"
+      >
+        <span className="avatar" aria-hidden="true">
+          {initials(user.name)}
+        </span>
+        <span className="sidebar-user-text">
+          <span className="sidebar-user-name">{user.name}</span>
+          <span className="sidebar-user-email">{user.email}</span>
+        </span>
+      </Link>
     </aside>
   );
 }

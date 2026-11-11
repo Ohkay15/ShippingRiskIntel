@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -24,6 +25,7 @@ export const dynamic = "force-dynamic";
  * record immediately.
  */
 export default async function ReviewQueuePage() {
+  await requireUser();
   let rows: {
     id: string;
     status: ShipmentStatus;

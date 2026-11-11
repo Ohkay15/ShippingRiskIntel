@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { runAgent } from "@/agent/runtime";
+import { getCurrentUser } from "@/auth/session";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -15,6 +16,9 @@ const bodySchema = z.object({
 
 /** POST { messages: [{ role, content }] } → { reply, steps, mode, model } */
 export async function POST(request: Request) {
+  if (!(await getCurrentUser())) {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
   let body: unknown;
   try {
     body = await request.json();

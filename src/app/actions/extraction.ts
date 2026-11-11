@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUser } from "@/auth/session";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -23,6 +24,7 @@ export async function confirmShipment(
   _prev: ConfirmState,
   formData: FormData
 ): Promise<ConfirmState> {
+  await requireUser();
   const parsedId = confirmInput.safeParse(formData.get("shipmentId"));
   if (!parsedId.success) {
     return { status: "error", message: "Missing or invalid shipment id." };

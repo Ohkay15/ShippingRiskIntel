@@ -53,10 +53,11 @@ const EVENT: RiskEvent = {
 };
 
 describe("catalog", () => {
-  it("has unique ids and every connector declares at least one env var", () => {
+  it("has unique ids; only always-on connectors skip env vars", () => {
     const ids = CONNECTORS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const c of CONNECTORS) expect(c.requiredEnv.length).toBeGreaterThan(0);
+    const keyless = CONNECTORS.filter((c) => c.requiredEnv.length === 0).map((c) => c.id);
+    expect(keyless).toEqual(["mcp"]);
   });
 
   it("derives status from the environment", () => {
@@ -76,7 +77,7 @@ describe("catalog", () => {
     const slack = report.flatMap((g) => g.connectors).find((c) => c.def.id === "slack")!;
     expect(slack.status).toBe("connected");
     expect(slack.missingEnv).toEqual([]);
-    expect(statusCounts(report).connected).toBe(1);
+    expect(statusCounts(report).connected).toBe(2); // slack + always-on MCP
   });
 });
 

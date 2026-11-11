@@ -350,10 +350,11 @@ export const CONNECTORS: readonly ConnectorDef[] = [
     id: "mcp",
     name: "MCP server (Claude, ChatGPT, agents)",
     category: "automation",
-    summary: "Exposes the assistant's tools to any MCP client at /api/mcp.",
+    summary: "The assistant's tools at /api/mcp. Each user connects with a personal API key from Settings.",
     access: "self_serve",
     implementation: "live",
-    requiredEnv: ["MCP_API_KEY"],
+    requiredEnv: [],
+    optionalEnv: ["MCP_API_KEY"],
     powers: "The product as a plugin inside AI assistants",
   },
 ];

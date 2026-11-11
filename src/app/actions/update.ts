@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUser } from "@/auth/session";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -52,6 +53,7 @@ export async function updateRecord(
   _prev: IntakeFormState,
   formData: FormData
 ): Promise<IntakeFormState> {
+  await requireUser();
   const [record] = await db
     .select({
       status: shipments.status,
@@ -103,6 +105,7 @@ export async function confirmAndScore(
   _prev: IntakeFormState,
   _formData: FormData
 ): Promise<IntakeFormState> {
+  await requireUser();
   const [record] = await db
     .select({ status: shipments.status, intakeData: shipments.intakeData })
     .from(shipments)
@@ -134,6 +137,7 @@ export async function confirmAndScore(
  * score; if that clears every default-based factor the record scores.
  */
 export async function confirmRecordChanges(id: string): Promise<void> {
+  await requireUser();
   const [record] = await db
     .select({
       status: shipments.status,

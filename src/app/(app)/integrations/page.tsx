@@ -1,3 +1,4 @@
+import { requireUser } from "@/auth/session";
 import {
   integrationStatusReport,
   processEnv,
@@ -22,7 +23,8 @@ const STATUS_HELP: Record<ConnectorStatus, string> = {
   planned: "Catalogued; adapter not built yet.",
 };
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  await requireUser();
   const report = integrationStatusReport(processEnv());
   const counts = statusCounts(report);
   const total = report.reduce((n, g) => n + g.connectors.length, 0);
