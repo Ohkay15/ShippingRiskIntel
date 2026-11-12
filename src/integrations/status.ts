@@ -63,6 +63,18 @@ export function integrationStatusReport(env: EnvSource): CategoryStatusView[] {
   })).filter((group) => group.connectors.length > 0);
 }
 
+/**
+ * Categories that are platform plumbing rather than something a user
+ * connects. The AI model key belongs to whoever runs the deployment, so it
+ * never appears on the Integrations page.
+ */
+export const HIDDEN_CATEGORIES: readonly string[] = ["ai"];
+
+/** The report as users see it: hidden categories removed. */
+export function visibleIntegrationReport(env: EnvSource): CategoryStatusView[] {
+  return integrationStatusReport(env).filter((g) => !HIDDEN_CATEGORIES.includes(g.category));
+}
+
 export function statusCounts(report: CategoryStatusView[]): Record<ConnectorStatus, number> {
   const counts: Record<ConnectorStatus, number> = {
     connected: 0,
@@ -79,7 +91,7 @@ export function statusCounts(report: CategoryStatusView[]): Record<ConnectorStat
 
 export const STATUS_LABELS: Record<ConnectorStatus, string> = {
   connected: "Connected",
-  add_key: "Ready — add key",
+  add_key: "Not connected",
   keys_set_pending_contract: "Keys set — awaiting partner spec",
   partner_access: "Partner access",
   planned: "Planned",

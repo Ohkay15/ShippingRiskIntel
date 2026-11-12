@@ -4,17 +4,17 @@
  *   1. creates .env from .env.example if missing,
  *   2. checks Postgres is reachable (friendly hint if not),
  *   3. applies the schema (drizzle-kit push — a no-op when in sync),
- *   4. seeds the 40-record demo dataset if the shipments table is empty.
  *
- * Seeding is conditional so a restart never clobbers records the operator
- * edited; `pnpm seed` refreshes them on demand.
+ * The app starts empty: only shipments people enter show up. Load the
+ * 40-record demo dataset on demand with `pnpm seed` (remove it again with
+ * `pnpm purge-demo`).
  */
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync } from "node:fs";
 import { sql } from "drizzle-orm";
 
 import { connect, loadEnv } from "./lib";
-import { seedDemoDatasetRows, shipmentCount } from "./seed-run";
+import { shipmentCount } from "./seed-run";
 
 async function main(): Promise<void> {
   if (!existsSync(".env")) {
@@ -47,12 +47,11 @@ async function main(): Promise<void> {
     }
 
     const existing = await shipmentCount(db);
-    if (existing === 0) {
-      console.log("\nShipments table is empty — loading the 40-record demo dataset…");
-      await seedDemoDatasetRows(db);
-    } else {
-      console.log(`\nDatabase already has ${existing} records — leaving them untouched (refresh with \`pnpm seed\`).`);
-    }
+    console.log(
+      existing === 0
+        ? "\nNo shipments yet. Add one in the app, or load sample data with `pnpm seed`."
+        : `\nDatabase has ${existing} shipment${existing === 1 ? "" : "s"}.`
+    );
   } finally {
     await pool.end();
   }

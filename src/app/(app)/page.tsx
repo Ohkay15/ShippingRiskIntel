@@ -20,7 +20,6 @@ import {
 import type { ShipmentIntake } from "@/schemas/shipment";
 import { effectiveCoverageUsd } from "@/schemas/shipment";
 import type { RiskProfile } from "@/scoring/engine";
-import { DemoDatasetButton } from "@/ui/demo-dataset-button";
 import { MatrixCellBadge, ScoreBadge } from "@/ui/risk-badges";
 import { StatusBadge } from "@/ui/status-badge";
 import { displayShipmentId } from "@/dashboard/record-id";
@@ -115,16 +114,14 @@ export default async function Home({
 
       {rows.length === 0 ? (
         <div className="state-panel">
-          <h2>No shipment records yet</h2>
+          <h2>No shipments yet</h2>
           <p>
-            Create the first record by entering the ten risk factors, or load
-            the synthetic demo dataset to see the dashboard populated.
+            Add your first shipment to see its risk score, coverage gap, and
+            route conditions.
           </p>
-          <DemoDatasetButton />
-          <p className="field-hint">
-            Or start from scratch:{" "}
-            <Link href="/shipments/new">create a record manually</Link>.
-          </p>
+          <Link href="/shipments/new" className="button-primary">
+            Add a shipment
+          </Link>
         </div>
       ) : (
         <table className="shipments-table">

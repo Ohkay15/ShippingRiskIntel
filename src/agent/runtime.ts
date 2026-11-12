@@ -40,7 +40,8 @@ export function systemPrompt(today: string): string {
     "- Insurance quotes marked 'indicative' are estimates, not offers. Say so.",
     "- You cannot change records. To act (resolve a review, pick a carrier or insurer), point the user to the record page link.",
     "- Weather alerts come from the National Weather Service (US only) and news from GDELT. Name the source, link articles, and don't treat a headline as confirmed impact on a shipment. A lane marked approximate is a straight line, not the road route.",
-    "- Refer to shipments by their short id (e.g. SH-007) and include the record link from tool results as a markdown link.",
+    "- Never mention environment variables, API keys or hosting settings to the user; if something isn't connected, say an admin can connect it.",
+    "- Refer to shipments by their short id from tool results and include the record link from tool results as a markdown link.",
     "- Be brief and specific: lead with the answer, then at most a short list. No preamble.",
   ].join("\n");
 }
@@ -107,23 +108,25 @@ function headlineLine(h: Headline): string {
 }
 
 export const OFFLINE_HELP = [
-  "I'm running in offline mode (no AI model key yet), so I answer a fixed set of questions using the same tools. Try:",
+  "I'm in offline mode until an AI model is connected, so I answer a fixed set of questions using the same tools. Try:",
   "- **Which shipments have a coverage gap?**",
   "- **What are the riskiest shipments?**",
   "- **Give me a portfolio summary**",
-  "- **Explain SH-007** · **Carriers for SH-007** · **Quote insurance for SH-007**",
-  "- **Weather and news on SH-007's route** · **What's happening in freight?**",
+  "- **Explain** a shipment · **Carriers for** a shipment · **Quote insurance for** a shipment (use its id, shown on the record page)",
+  "- **Weather and news on** a shipment's route · **What's happening in freight?**",
   "- **Look up DOT 1234567**",
   "- **Which integrations are connected?**",
   "",
-  "Add `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the environment for free-form questions.",
+  "Free-form questions turn on once an AI model is connected.",
 ].join("\n");
 
 function findShipmentRef(text: string): string | null {
   const uuid = text.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
   if (uuid) return uuid;
   const demo = text.match(/\bsh[-\s]?\d{1,3}\b/i)?.[0];
-  return demo && resolveShipmentId(demo) ? demo : null;
+  if (demo && resolveShipmentId(demo)) return demo;
+  // Short id as shown in the app (first block of the UUID), e.g. "A6DCFAAF".
+  return text.match(/(?<![\w-])#?([0-9a-f]{8})(?![\w-])/i)?.[1] ?? null;
 }
 
 export type OfflineIntent =
@@ -234,12 +237,12 @@ export async function runOfflineAgent(history: ChatTurn[]): Promise<AgentReply> 
         );
         const all = r.flatMap((g) => g.connectors);
         const connected = all.filter((c) => c.status === "Connected").map((c) => c.name);
-        const ready = all.filter((c) => c.status.startsWith("Ready")).map((c) => c.name);
+        const ready = all.filter((c) => c.status === "Not connected").map((c) => c.name);
         return done(
           [
             connected.length ? `**Connected:** ${connected.join(", ")}.` : "**Nothing is connected yet** — everything runs on built-in sample data.",
-            `**Ready for a key (${ready.length}):** ${ready.join(", ")}.`,
-            "See [Integrations](/integrations) for the exact environment variables.",
+            `**Ready to connect (${ready.length}):** ${ready.join(", ")}.`,
+            "See [Integrations](/integrations) for details.",
           ].join("\n\n")
         );
       }
