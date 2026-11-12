@@ -15,7 +15,7 @@ const bodySchema = z.object({
     .max(40),
 });
 
-/** POST { messages: [{ role, content }] } → { reply, steps, mode, model } */
+/** POST { messages: [{ role, content }] } → { reply, steps, mode } */
 export async function POST(request: Request) {
   if (!(await getCurrentUser())) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
@@ -38,7 +38,9 @@ export async function POST(request: Request) {
     );
   }
   try {
-    return NextResponse.json(await runAgent(parsed.data.messages));
+    // The model name stays server-side; the app never shows it.
+    const { reply, steps, mode } = await runAgent(parsed.data.messages);
+    return NextResponse.json({ reply, steps, mode });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });

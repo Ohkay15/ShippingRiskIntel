@@ -15,7 +15,6 @@ interface AgentResponse {
   reply: string;
   steps: { tool: string; ok: boolean }[];
   mode: "live" | "offline";
-  model: string | null;
   error?: string;
 }
 
