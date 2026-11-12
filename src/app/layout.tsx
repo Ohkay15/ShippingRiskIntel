@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   title: "ShippingRiskIntel",
   description:
     "Shipment risk layer: score every shipment, explain it, and surface the coverage gap.",
+  // The app may run without sign-in; keep it out of search results.
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isPublicPath, SESSION_COOKIE } from "@/auth/constants";
+import { ACCOUNT_ONLY_PATHS, signInRequired } from "@/auth/mode";
 import { userForSessionToken } from "@/auth/session-store";
 
 /**
@@ -13,6 +14,18 @@ import { userForSessionToken } from "@/auth/session-store";
  */
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  // Open mode: no accounts at all. Account pages just go home.
+  if (!signInRequired()) {
+    if (ACCOUNT_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
   if (isPublicPath(pathname)) return NextResponse.next();
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
