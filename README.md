@@ -20,13 +20,12 @@ before the dev server, which:
 1. creates `.env` from `.env.example` if it is missing (local defaults work as-is),
 2. checks Postgres is reachable (if not: run `docker compose up -d` and retry),
 3. applies the schema (`drizzle-kit push` — a no-op when already in sync),
-4. seeds the 40-record synthetic demo dataset **if the shipments table is
-   empty** — a restart never clobbers records you have edited.
+The app starts with no shipments: only records people enter appear. Open
+http://localhost:3000 and add one.
 
-Open http://localhost:3000 — the dashboard is populated and demo-ready.
-
-To reset the demo data to its pristine state at any time: `pnpm seed`
-(idempotent — it upserts the 40 fixed records, replacing any changes).
+To load the 40-record synthetic demo dataset: `pnpm seed` (idempotent upsert
+of fixed ids). To remove it again: `pnpm purge-demo` — your own records are
+never touched.
 
 ## Verify the whole pipeline in one pass
 
@@ -76,8 +75,9 @@ themselves; the demo dataset is untouched).
 
 | Command | What it does |
 | --- | --- |
-| `pnpm dev` | Setup (env, schema, demo seed if empty) + run the app locally |
+| `pnpm dev` | Setup (env, schema) + run the app locally |
 | `pnpm seed` | Load the 40-record demo dataset (idempotent upsert; `pnpm seed -- --if-empty` skips when data exists) |
+| `pnpm purge-demo` | Remove the demo dataset, keeping every real record |
 | `pnpm fullflow` | End-to-end pipeline test: intake → upload → extract → review → scored → actioned |
 | `pnpm timing` | Measure intake-to-scored latency across the 40-record dataset |
 | `pnpm db:push` | Apply the schema to `DATABASE_URL` |
@@ -193,6 +193,6 @@ Push to the connected repo. The only required env var is `DATABASE_URL`
 optional and can be added at any time — redeploy to pick them up.
 
 Vercel runs the `vercel-build` script instead of `build`. It applies the
-schema (`drizzle-kit push`), seeds the 40-record demo dataset **only if the
-shipments table is empty**, then runs `next build` — so a fresh database is
-ready after one deploy, and later deploys never overwrite edited records.
+schema (`drizzle-kit push`), removes any demo shipments (fixed demo ids
+only; set `KEEP_DEMO_DATA=true` to keep them), then runs `next build`. A
+deployment only ever shows shipments people entered.

@@ -21,7 +21,8 @@ import {
 } from "./events";
 import { bearerMatches, parseInboundLoad } from "./inbound";
 import { getInsuranceQuote, getInsuranceQuoteProviders, type QuoteRequest } from "./insurance-quotes";
-import { connectorStatus, integrationStatusReport, statusCounts } from "./status";
+import { connectorStatus, integrationStatusReport,
+  visibleIntegrationReport, statusCounts } from "./status";
 import { getShippingRateProvider, SampleRateProvider } from "./shipping-rates";
 
 /** Fake fetch that records calls and answers from a script. */
@@ -70,6 +71,12 @@ describe("catalog", () => {
     expect(connectorStatus(loadsure, {})).toBe("partner_access");
     expect(connectorStatus(loadsure, { LOADSURE_API_KEY: "k" })).toBe("keys_set_pending_contract");
     expect(connectorStatus(stripe, { STRIPE_SECRET_KEY: "a", STRIPE_WEBHOOK_SECRET: "b" })).toBe("planned");
+  });
+
+  it("keeps AI model plumbing off the user-facing report", () => {
+    const visible = visibleIntegrationReport({}).map((g) => g.category);
+    expect(visible).not.toContain("ai");
+    expect(visible).toContain("crm");
   });
 
   it("reports missing env vars and counts", () => {

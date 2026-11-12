@@ -23,8 +23,7 @@ const SUGGESTIONS = [
   "Which shipments have a coverage gap?",
   "What are the riskiest shipments?",
   "Give me a portfolio summary",
-  "Explain SH-007",
-  "Quote insurance for SH-007",
+  "What's happening in freight?",
   "Which integrations are connected?",
 ];
 
@@ -37,6 +36,8 @@ const TOOL_LABELS: Record<string, string> = {
   quote_insurance: "Got insurance quote",
   lookup_carrier_safety: "Looked up carrier",
   integration_status: "Checked integrations",
+  route_conditions: "Checked route conditions",
+  freight_news: "Read freight news",
 };
 
 export function AssistantChat({ initialQuestion, modeLabel }: { initialQuestion?: string; modeLabel: string }) {

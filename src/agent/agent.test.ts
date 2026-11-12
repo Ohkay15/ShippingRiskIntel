@@ -34,6 +34,8 @@ describe("offline router", () => {
     ["Any weather on SH-007's route?", "conditions"],
     ["news for SH-3", "conditions"],
     ["What's the latest freight news?", "news"],
+    ["Explain A6DCFAAF", "explain"],
+    ["weather on #a6dcfaaf route", "conditions"],
     ["hi", "help"],
   ])("%s → %s", (text, kind) => {
     expect(classifyOffline(text).kind).toBe(kind);

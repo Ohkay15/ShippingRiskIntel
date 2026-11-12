@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { shipments } from "@/db/schema";
@@ -11,7 +11,7 @@ import { recommendInsurance } from "@/insurance/recommend";
 import { networkNews, routeConditions } from "@/conditions/service";
 import { getCarrierDataProvider } from "@/integrations/carrier-data";
 import { getInsuranceQuote } from "@/integrations/insurance-quotes";
-import { integrationStatusReport, processEnv, STATUS_LABELS } from "@/integrations/status";
+import { processEnv, STATUS_LABELS, visibleIntegrationReport } from "@/integrations/status";
 import type { ToolSpec } from "@/llm/model-client";
 import { factorRows, recordSummary } from "@/profile/view-model";
 import { shipmentIntakeSchema, type FactorKey, type ShipmentIntake } from "@/schemas/shipment";
@@ -57,6 +57,23 @@ function round(n: number | null | undefined, digits = 2): number | null {
   return Math.round(n * f) / f;
 }
 
+/** The short id shown in the UI for real records: first block of the UUID. */
+const SHORT_ID = /^#?([0-9a-f]{8})$/i;
+
+/** Like resolveShipmentId, but also accepts the 8-character short id (DB lookup). */
+async function resolveShipmentIdAsync(raw: unknown): Promise<string | null> {
+  const direct = resolveShipmentId(raw);
+  if (direct) return direct;
+  const short = typeof raw === "string" ? raw.trim().match(SHORT_ID)?.[1]?.toLowerCase() : undefined;
+  if (!short) return null;
+  const rows = await db
+    .select({ id: shipments.id })
+    .from(shipments)
+    .where(sql`${shipments.id}::text like ${short + "-%"}`)
+    .limit(2);
+  return rows.length === 1 ? rows[0]!.id : null;
+}
+
 interface LoadedShipment {
   id: string;
   status: ShipmentStatus;
@@ -66,8 +83,8 @@ interface LoadedShipment {
 }
 
 async function loadShipment(rawId: unknown): Promise<LoadedShipment> {
-  const id = resolveShipmentId(rawId);
-  if (!id) throw new Error(`"${String(rawId)}" is not a shipment id. Use a record id or a demo id like SH-007.`);
+  const id = await resolveShipmentIdAsync(rawId);
+  if (!id) throw new Error(`"${String(rawId)}" doesn't match a shipment. Use the id shown on the record page.`);
   const [row] = await db
     .select({
       id: shipments.id,
@@ -209,7 +226,7 @@ const getRiskProfile: AgentTool = {
     "One shipment's full risk profile: composite score, matrix cell, coverage gap, and every factor's likelihood × consequence × weight with where the rating came from (rule, document evidence, human review, or conservative default).",
   inputSchema: {
     type: "object",
-    properties: { shipment_id: { type: "string", description: "Record UUID or demo id like SH-007." } },
+    properties: { shipment_id: { type: "string", description: "The shipment id shown in the app (8 characters, e.g. A6DCFAAF) or the full record UUID." } },
     required: ["shipment_id"],
   },
   async run(input) {
@@ -347,9 +364,9 @@ const integrationStatus: AgentTool = {
   description: "Which integrations are connected, which are ready for a key, and which need partner access.",
   inputSchema: { type: "object", properties: {} },
   async run() {
-    return integrationStatusReport(processEnv()).map((g) => ({
+    return visibleIntegrationReport(processEnv()).map((g) => ({
       category: g.category,
-      connectors: g.connectors.map((c) => ({ name: c.def.name, status: STATUS_LABELS[c.status], missingEnv: c.missingEnv })),
+      connectors: g.connectors.map((c) => ({ name: c.def.name, status: STATUS_LABELS[c.status] })),
     }));
   },
 };
@@ -360,7 +377,7 @@ const routeConditionsTool: AgentTool = {
     "Live conditions on a shipment's lane: active National Weather Service alerts along the route (most severe first), recent news about the origin/destination and freight topics, and lane distance. Free public data; US weather coverage only. The map with radar is on the shipment page.",
   inputSchema: {
     type: "object",
-    properties: { shipment_id: { type: "string", description: "Record UUID or demo id like SH-007." } },
+    properties: { shipment_id: { type: "string", description: "The shipment id shown in the app (8 characters, e.g. A6DCFAAF) or the full record UUID." } },
     required: ["shipment_id"],
   },
   async run(input) {

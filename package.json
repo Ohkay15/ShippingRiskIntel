@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "tsx scripts/dev-setup.ts && next dev",
     "seed": "tsx scripts/seed.ts",
+    "purge-demo": "tsx scripts/purge-demo.ts",
     "db:push": "drizzle-kit push --force",
     "fullflow": "tsx scripts/full-flow.ts",
     "timing": "tsx scripts/timing-check.ts",
     "build": "next build",
-    "vercel-build": "drizzle-kit push --force && tsx scripts/seed.ts --if-empty && next build",
+    "vercel-build": "drizzle-kit push --force && tsx scripts/purge-demo.ts && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
