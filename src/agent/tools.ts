@@ -8,6 +8,7 @@ import { recommendCarriers } from "@/carriers/recommend";
 import { PLACEHOLDER_INSURER_FIT_MATRIX } from "@/insurance/matrix-data";
 import { recommendCoverageLimit } from "@/insurance/limit";
 import { recommendInsurance } from "@/insurance/recommend";
+import { networkNews, routeConditions } from "@/conditions/service";
 import { getCarrierDataProvider } from "@/integrations/carrier-data";
 import { getInsuranceQuote } from "@/integrations/insurance-quotes";
 import { integrationStatusReport, processEnv, STATUS_LABELS } from "@/integrations/status";
@@ -353,6 +354,51 @@ const integrationStatus: AgentTool = {
   },
 };
 
+const routeConditionsTool: AgentTool = {
+  name: "route_conditions",
+  description:
+    "Live conditions on a shipment's lane: active National Weather Service alerts along the route (most severe first), recent news about the origin/destination and freight topics, and lane distance. Free public data; US weather coverage only. The map with radar is on the shipment page.",
+  inputSchema: {
+    type: "object",
+    properties: { shipment_id: { type: "string", description: "Record UUID or demo id like SH-007." } },
+    required: ["shipment_id"],
+  },
+  async run(input) {
+    const s = await loadShipment(input.shipment_id);
+    const lane = s.intake.route_lane;
+    const c = await routeConditions(lane.origin, lane.destination);
+    return {
+      shipment: displayShipmentId(s.id),
+      link: `/shipments/${s.id}#conditions`,
+      origin: c.origin?.name ?? lane.origin ?? null,
+      destination: c.destination?.name ?? lane.destination ?? null,
+      laneKm: c.route ? Math.round(c.route.distanceKm) : null,
+      laneIsApproximate: c.route?.approximate ?? null,
+      alerts: c.alerts.slice(0, 8).map((a) => ({
+        event: a.event,
+        severity: a.severity,
+        area: a.area,
+        until: a.ends,
+        headline: a.headline,
+      })),
+      news: c.news.slice(0, 6).map((n) => ({ title: n.title, source: n.domain, url: n.url, seenAt: n.seenAt })),
+      issues: c.issues,
+      sources: c.sources.map((src) => src.label),
+    };
+  },
+};
+
+const freightNewsTool: AgentTool = {
+  name: "freight_news",
+  description:
+    "Recent US freight and supply-chain news (trucking, ports, rail, tariffs, cargo theft) from the GDELT Project. Use for 'what's happening in freight' questions; for one lane use route_conditions.",
+  inputSchema: { type: "object", properties: {} },
+  async run() {
+    const items = await networkNews();
+    return items.map((n) => ({ title: n.title, source: n.domain, url: n.url, seenAt: n.seenAt }));
+  },
+};
+
 export const AGENT_TOOLS: readonly AgentTool[] = [
   portfolioSummary,
   listShipments,
@@ -362,6 +408,8 @@ export const AGENT_TOOLS: readonly AgentTool[] = [
   quoteInsurance,
   lookupCarrier,
   integrationStatus,
+  routeConditionsTool,
+  freightNewsTool,
 ];
 
 export function toolByName(name: string): AgentTool | undefined {

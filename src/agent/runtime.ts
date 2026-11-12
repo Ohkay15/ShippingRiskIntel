@@ -39,6 +39,7 @@ export function systemPrompt(today: string): string {
     "- Say where a rating came from when it matters (rule, document evidence, human review, or conservative default).",
     "- Insurance quotes marked 'indicative' are estimates, not offers. Say so.",
     "- You cannot change records. To act (resolve a review, pick a carrier or insurer), point the user to the record page link.",
+    "- Weather alerts come from the National Weather Service (US only) and news from GDELT. Name the source, link articles, and don't treat a headline as confirmed impact on a shipment. A lane marked approximate is a straight line, not the road route.",
     "- Refer to shipments by their short id (e.g. SH-007) and include the record link from tool results as a markdown link.",
     "- Be brief and specific: lead with the answer, then at most a short list. No preamble.",
   ].join("\n");
@@ -111,6 +112,7 @@ export const OFFLINE_HELP = [
   "- **What are the riskiest shipments?**",
   "- **Give me a portfolio summary**",
   "- **Explain SH-007** · **Carriers for SH-007** · **Quote insurance for SH-007**",
+  "- **Weather and news on SH-007's route** · **What's happening in freight?**",
   "- **Look up DOT 1234567**",
   "- **Which integrations are connected?**",
   "",
@@ -134,6 +136,8 @@ export type OfflineIntent =
   | { kind: "carriers"; ref: string }
   | { kind: "insurance"; ref: string }
   | { kind: "explain"; ref: string }
+  | { kind: "conditions"; ref: string }
+  | { kind: "news" }
   | { kind: "help" };
 
 export function classifyOffline(text: string): OfflineIntent {
@@ -142,10 +146,12 @@ export function classifyOffline(text: string): OfflineIntent {
   if (dot) return { kind: "carrier_lookup", dot };
   const ref = findShipmentRef(text);
   if (ref) {
+    if (/weather|radar|storm|alert|snow|conditions|road|news|route|lane/.test(t)) return { kind: "conditions", ref };
     if (/\bcarrier|swap|truck|haul/.test(t)) return { kind: "carriers", ref };
     if (/insur|quote|premium|cover/.test(t)) return { kind: "insurance", ref };
     return { kind: "explain", ref };
   }
+  if (/\bnews\b|headlines|happening in freight|supply chain/.test(t)) return { kind: "news" };
   if (/integration|connector|connected|api key/.test(t)) return { kind: "integrations" };
   if (/gap|uncovered|underinsured|under-insured|exposure/.test(t)) return { kind: "gaps" };
   if (/riskiest|highest|worst|top risk|most risk|dangerous/.test(t)) return { kind: "riskiest" };
@@ -236,6 +242,39 @@ export async function runOfflineAgent(history: ChatTurn[]): Promise<AgentReply> 
             "See [Integrations](/integrations) for the exact environment variables.",
           ].join("\n\n")
         );
+      }
+      case "conditions": {
+        const r = await tool<{
+          shipment: string;
+          link: string;
+          origin: string | null;
+          destination: string | null;
+          laneKm: number | null;
+          alerts: { event: string; severity: string; area: string; until: string | null }[];
+          news: { title: string; source: string; url: string }[];
+          issues: string[];
+        }>("route_conditions", { shipment_id: intent.ref }, steps);
+        const lane = r.origin && r.destination ? `${r.origin} → ${r.destination}` : "this lane";
+        const km = r.laneKm != null ? ` (~${Math.round(r.laneKm * 0.621).toLocaleString("en-US")} mi)` : "";
+        const alerts = r.alerts.length
+          ? r.alerts.map((a) => `- **${a.event}** (${a.severity.toLowerCase()}) — ${a.area.split(";").slice(0, 3).join(";")}${a.until ? ` · until ${new Date(a.until).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}` : ""}`)
+          : ["- No active weather alerts along the lane."];
+        const news = r.news.length ? r.news.slice(0, 4).map((n) => `- [${n.title}](${n.url}) · ${n.source}`) : [];
+        return done(
+          [
+            `**${r.shipment}** · ${lane}${km}. [Open the map with radar](${r.link}).`,
+            "",
+            "**Weather alerts**",
+            ...alerts,
+            ...(news.length ? ["", "**In the news**", ...news] : []),
+            ...(r.issues.length ? ["", `_${r.issues.join(" ")}_`] : []),
+          ].join("\n")
+        );
+      }
+      case "news": {
+        const items = await tool<{ title: string; source: string; url: string }[]>("freight_news", {}, steps);
+        if (items.length === 0) return done("No freight news came back just now. Try again in a minute.");
+        return done(["**Freight news, last 48 hours**", "", ...items.slice(0, 8).map((n) => `- [${n.title}](${n.url}) · ${n.source}`)].join("\n"));
       }
       case "carrier_lookup": {
         const r = await tool<{

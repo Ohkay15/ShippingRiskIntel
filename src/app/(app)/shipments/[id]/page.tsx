@@ -41,6 +41,8 @@ import {
   limitGuidanceView,
 } from "@/insurance/recommendation-view";
 import { InsuranceRecommendationsPanel } from "@/insurance/recommendations-panel";
+import { toneForCell } from "@/conditions/db-lanes";
+import { RouteConditionsPanel } from "@/ui/route-conditions";
 import { IntakeSummary } from "./intake-summary";
 
 export const dynamic = "force-dynamic";
@@ -247,6 +249,10 @@ export default async function ShipmentPage({
           scoredAt={record.scoredAt}
           provisional={provisional}
         />
+      )}
+
+      {(record.intakeData.route_lane.origin || record.intakeData.route_lane.destination) && (
+        <RouteConditionsPanel shipmentId={record.id} tone={toneForCell(record.profile?.cell)} />
       )}
 
       <DocumentUploadPanel

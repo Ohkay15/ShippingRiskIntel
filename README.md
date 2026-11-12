@@ -164,6 +164,28 @@ keys**, then add the server to any MCP client with header
 `Authorization: Bearer <your key>`. Keys are shown once, stored only as
 hashes, and can be revoked. An optional shared `MCP_API_KEY` also works.
 
+## Maps, radar, weather alerts and news
+
+Every lane is drawn on a map with live weather radar, active weather alerts
+along it, and recent news about its endpoints — on each shipment page
+(**Route conditions**) and for the whole book on **Live map** (`/map`). The
+assistant can answer "any weather on SH-007's route?" and "what's happening
+in freight?" with the same data. Everything is free public data; no keys:
+
+| Layer | Source | Notes |
+| --- | --- | --- |
+| Base map | OpenStreetMap via [OpenFreeMap](https://openfreemap.org) + MapLibre | Light/dark follows the OS |
+| Radar | NOAA NEXRAD via [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/ogc/) | US only; last hour in 10-minute frames |
+| Alerts | [National Weather Service](https://www.weather.gov/documentation/services-web-api) | Along each lane, plus nationwide severe warnings |
+| News | [GDELT](https://www.gdeltproject.org) | One request per 5 s, cached 20 min |
+| Places | Built-in list of freight hubs, then [Nominatim](https://nominatim.org) | Cached a day |
+
+Lanes are straight (great-circle) lines unless `ROUTING_URL` points at a
+self-hosted [OSRM](https://project-osrm.org) server; we don't use the public
+OSRM demo server because its policy rules out production use. If a feed is
+down, the page says so rather than showing "all clear". Optional knobs:
+`PUBLIC_DATA_CONTACT`, `GEOCODER_URL`, `ROUTING_URL` (see `.env.example`).
+
 ## Deployment (Vercel)
 
 Push to the connected repo. The only required env var is `DATABASE_URL`

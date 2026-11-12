@@ -75,3 +75,10 @@ export const IconTool = (p: IconProps) => (
     <path d="M10 2.5a3 3 0 0 0-2.8 4.1L2.5 11.3l2.2 2.2 4.7-4.7A3 3 0 0 0 13.5 6l-1.8 1.8-1.9-.4-.4-1.9L11.2 3.7A3 3 0 0 0 10 2.5z" />
   </Svg>
 );
+
+export const IconMap = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M2.5 4.2 6 2.8l4 1.4 3.5-1.4v9l-3.5 1.4-4-1.4-3.5 1.4z" />
+    <path d="M6 2.8v9M10 4.2v9" />
+  </Svg>
+);
