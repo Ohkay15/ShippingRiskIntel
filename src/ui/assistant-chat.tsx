@@ -15,7 +15,6 @@ interface AgentResponse {
   reply: string;
   steps: { tool: string; ok: boolean }[];
   mode: "live" | "offline";
-  model: string | null;
   error?: string;
 }
 
@@ -40,11 +39,10 @@ const TOOL_LABELS: Record<string, string> = {
   freight_news: "Read freight news",
 };
 
-export function AssistantChat({ initialQuestion, modeLabel }: { initialQuestion?: string; modeLabel: string }) {
+export function AssistantChat({ initialQuestion }: { initialQuestion?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
-  const [mode, setMode] = useState(modeLabel);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const askedInitial = useRef(false);
@@ -68,7 +66,6 @@ export function AssistantChat({ initialQuestion, modeLabel }: { initialQuestion?
       });
       const data = (await res.json()) as AgentResponse;
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
-      setMode(data.mode === "live" ? (data.model ?? "Live model") : "Offline mode");
       setMessages([...next, { role: "assistant", content: data.reply, steps: data.steps }]);
     } catch (error) {
       setMessages([
@@ -160,7 +157,6 @@ export function AssistantChat({ initialQuestion, modeLabel }: { initialQuestion?
           aria-label="Message the assistant"
         />
         <div className="composer-bar">
-          <span className="composer-mode">{mode}</span>
           <button type="submit" className="composer-send" disabled={pending || draft.trim() === ""} aria-label="Send">
             <IconArrowUp />
           </button>
