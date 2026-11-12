@@ -30,6 +30,7 @@
   --border-strong: rgba(31, 30, 28, 0.22);
 
   /* ---- Accent: warm clay ---- */
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%235f5d57' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5l3-3'/%3E%3C/svg%3E");
   --accent: #c6613f;
   --accent-hover: #b5552f;
   --accent-down: #a14a28;
@@ -133,6 +134,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23bfbdb4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5l3-3'/%3E%3C/svg%3E");
     --bg-base: #262624;
     --bg-sidebar: #1f1e1d;
     --surface-1: #2d2d2a;
@@ -1181,10 +1183,18 @@ button[type="submit"]:disabled {
   box-shadow: var(--shadow-card);
 }
 
+/*
+ * A fieldset's legend normally sits ON the top border. Floating it turns it
+ * into an ordinary grid item, so the section title reads as a card header
+ * inside the container instead of cutting through its edge.
+ */
 .factor-group legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 0.125rem;
   font-weight: 600;
   font-size: 0.9375rem;
-  padding: 0 0.5rem;
   grid-column: 1 / -1;
   letter-spacing: -0.01em;
 }
@@ -1217,10 +1227,24 @@ button[type="submit"]:disabled {
   border-radius: var(--radius-sm);
   font: inherit;
   font-size: 0.90625rem;
-  background: var(--surface-inset);
+  background-color: var(--surface-inset);
   color: var(--text-primary);
   width: 100%;
   transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+
+/* Native select arrows hug the edge; draw our own, inset like the text. */
+select:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: var(--select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.75rem 0.75rem;
+}
+
+.field select {
+  padding-right: 2.25rem;
 }
 
 .field input[type="text"]:hover,
@@ -1401,10 +1425,14 @@ button[type="submit"]:disabled {
   padding: 0.45rem 0.7rem;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: var(--surface-inset);
+  background-color: var(--surface-inset);
   color: var(--text-primary);
   font: inherit;
   font-size: 0.875rem;
+}
+
+.upload-row select {
+  padding-right: 2.25rem;
 }
 
 .upload-row input[type="file"]::file-selector-button {
