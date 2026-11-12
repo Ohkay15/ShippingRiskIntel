@@ -1,4 +1,4 @@
-import { requestJson, type FetchLike } from "@/integrations/http";
+import type { FetchLike } from "@/integrations/http";
 import { TtlCache } from "@/geo/cache";
 import type { Place } from "@/geo/places";
 
@@ -25,6 +25,8 @@ export interface NewsItem {
   seenAt: string | null;
   image: string | null;
   country: string | null;
+  /** Which feed it came from, for attribution. */
+  provider: "gdelt" | "google_news";
 }
 
 interface GdeltArticle {
@@ -80,56 +82,159 @@ export function laneNewsQuery(places: (Place | null)[]): string | null {
   const cities = places.filter((p): p is Place => p !== null).map((p) => p.name.split(",")[0]);
   const where = orGroup(cities);
   if (!where) return null;
-  const allUs = places.every((p) => !p || p.country === "US");
-  return [where, orGroup(FREIGHT_TERMS), "sourcelang:english", allUs ? "sourcecountry:unitedstates" : ""]
-    .filter(Boolean)
-    .join(" ");
+  return [where, orGroup(FREIGHT_TERMS), "sourcelang:english"].join(" ");
 }
 
 export const NETWORK_NEWS_QUERY = [
   orGroup(["supply chain", "freight", "trucking", "port congestion", "railroad", "cargo theft", "shipping delays", "tariff"]),
   "sourcelang:english",
-  "sourcecountry:unitedstates",
 ].join(" ");
 
 function cleanTitle(title: string): string {
   return title.replace(/\s+/g, " ").replace(/\s+-\s+[^-]+$/, (tail) => (tail.length < 40 ? "" : tail)).trim();
 }
 
+/** Fetch text with a timeout; never throws on HTTP status (callers decide). */
+async function fetchText(
+  url: string,
+  fetchImpl: FetchLike,
+  timeoutMs: number,
+  headers: Record<string, string> = {}
+): Promise<{ status: number; text: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetchImpl(url, { headers, signal: controller.signal, cache: "no-store" });
+    return { status: res.status, text: await res.text() };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** GDELT DOC 2.0. It answers errors as plain text (sometimes with HTTP 200). */
+async function gdeltSearch(query: string, timespan: string, max: number, fetchImpl: FetchLike): Promise<NewsItem[]> {
+  const url = `${GDELT}?query=${encodeURIComponent(query)}&mode=artlist&format=json&sort=datedesc&maxrecords=${max * 2}&timespan=${timespan}`;
+  let attempt = await throttled(() => fetchText(url, fetchImpl, 15000));
+  if (attempt.status === 429) {
+    await sleep(minGapMs + 300);
+    attempt = await throttled(() => fetchText(url, fetchImpl, 15000));
+  }
+  const body = attempt.text.trim();
+  if (attempt.status !== 200 || !body.startsWith("{")) {
+    throw new Error(`GDELT ${attempt.status}: ${body.slice(0, 200) || "empty response"}`);
+  }
+  const res = JSON.parse(body) as { articles?: GdeltArticle[] };
+  const seen = new Set<string>();
+  const items: NewsItem[] = [];
+  for (const a of res.articles ?? []) {
+    if (!a.url || !a.title || !/^https?:\/\//.test(a.url)) continue;
+    const title = cleanTitle(a.title);
+    const key = title.toLowerCase();
+    if (seen.has(key)) continue; // syndicated duplicates
+    seen.add(key);
+    items.push({
+      title,
+      url: a.url,
+      domain: a.domain ?? new URL(a.url).hostname,
+      seenAt: parseSeenDate(a.seendate),
+      image: a.socialimage && /^https:\/\//.test(a.socialimage) ? a.socialimage : null,
+      country: a.sourcecountry ?? null,
+      provider: "gdelt",
+    });
+    if (items.length >= max) break;
+  }
+  return items;
+}
+
+function decodeXml(text: string): string {
+  return text
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+/** Turn a GDELT query into plain keywords for the backup source. */
+export function toKeywordQuery(gdeltQuery: string): string {
+  return gdeltQuery.replace(/\b(sourcelang|sourcecountry|domain|domainis):\S+/g, "").replace(/\s+/g, " ").trim();
+}
+
+/** Parse a Google News RSS feed: headline, link and publisher only. */
+export function parseNewsRss(xml: string, max: number): NewsItem[] {
+  const items: NewsItem[] = [];
+  const seen = new Set<string>();
+  for (const block of xml.match(/<item>[\s\S]*?<\/item>/g) ?? []) {
+    const pick = (tag: string) => block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`))?.[1];
+    const link = decodeXml(pick("link") ?? "");
+    const sourceMatch = block.match(/<source[^>]*url="([^"]*)"[^>]*>([\s\S]*?)<\/source>/);
+    const publisher = sourceMatch ? decodeXml(sourceMatch[2]) : "";
+    let title = decodeXml(pick("title") ?? "");
+    if (publisher && title.endsWith(` - ${publisher}`)) title = title.slice(0, -(publisher.length + 3));
+    if (!title || !/^https:\/\//.test(link) || seen.has(title.toLowerCase())) continue;
+    seen.add(title.toLowerCase());
+    const pub = pick("pubDate");
+    const when = pub ? new Date(decodeXml(pub)) : null;
+    let domain = publisher;
+    if (!domain && sourceMatch?.[1]) {
+      try {
+        domain = new URL(decodeXml(sourceMatch[1])).hostname;
+      } catch {
+        domain = "";
+      }
+    }
+    items.push({
+      title,
+      url: link,
+      domain: domain || "news.google.com",
+      seenAt: when && !Number.isNaN(when.getTime()) ? when.toISOString() : null,
+      image: null,
+      country: null,
+      provider: "google_news",
+    });
+    if (items.length >= max) break;
+  }
+  return items;
+}
+
+/** Backup: Google News search RSS (headlines and links only). */
+async function googleNewsSearch(query: string, timespan: string, max: number, fetchImpl: FetchLike): Promise<NewsItem[]> {
+  const q = `${toKeywordQuery(query)} when:${timespan}`;
+  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+  const res = await fetchText(url, fetchImpl, 10000, { "User-Agent": "Mozilla/5.0 (compatible; ShippingRiskIntel/1.0)" });
+  if (res.status !== 200 || !res.text.includes("<rss")) {
+    throw new Error(`Google News ${res.status}: ${res.text.slice(0, 120)}`);
+  }
+  return parseNewsRss(res.text, max);
+}
+
+/**
+ * News for a query: GDELT first; if it errors (it rate-limits shared cloud
+ * IPs), Google News RSS. Failures are logged with the upstream message so
+ * they show up in the hosting logs.
+ */
 export async function searchNews(
   query: string,
   opts: { timespan?: string; max?: number; fetchImpl?: FetchLike } = {}
 ): Promise<NewsItem[]> {
   const timespan = opts.timespan ?? "3d";
   const max = Math.min(opts.max ?? 12, 50);
-  return cache.getOrLoad(`${timespan}|${max}|${query}`, () =>
-    throttled(async () => {
-      const url = `${GDELT}?query=${encodeURIComponent(query)}&mode=artlist&format=json&sort=datedesc&maxrecords=${max * 2}&timespan=${timespan}`;
-      const res = await requestJson<{ articles?: GdeltArticle[] }>({
-        connectorId: "gdelt_news",
-        url,
-        timeoutMs: 9000,
-        fetchImpl: opts.fetchImpl,
-      });
-      const seen = new Set<string>();
-      const items: NewsItem[] = [];
-      for (const a of res.articles ?? []) {
-        if (!a.url || !a.title || !/^https?:\/\//.test(a.url)) continue;
-        const title = cleanTitle(a.title);
-        const key = title.toLowerCase();
-        if (seen.has(key)) continue; // syndicated duplicates
-        seen.add(key);
-        items.push({
-          title,
-          url: a.url,
-          domain: a.domain ?? new URL(a.url).hostname,
-          seenAt: parseSeenDate(a.seendate),
-          image: a.socialimage && /^https:\/\//.test(a.socialimage) ? a.socialimage : null,
-          country: a.sourcecountry ?? null,
-        });
-        if (items.length >= max) break;
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  return cache.getOrLoad(`${timespan}|${max}|${query}`, async () => {
+    try {
+      return await gdeltSearch(query, timespan, max, fetchImpl);
+    } catch (gdeltError) {
+      console.warn(`[news] ${gdeltError instanceof Error ? gdeltError.message : String(gdeltError)}`);
+      try {
+        return await googleNewsSearch(query, timespan, max, fetchImpl);
+      } catch (backupError) {
+        console.warn(`[news] ${backupError instanceof Error ? backupError.message : String(backupError)}`);
+        throw backupError;
       }
-      return items;
-    })
-  );
+    }
+  });
 }

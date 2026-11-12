@@ -1,5 +1,6 @@
 "use client";
 
+import { optionLabel } from "./option-labels";
 import { useActionState } from "react";
 
 import { FACTOR_GROUP_META, type FormFieldDef } from "@/intake/form-fields";
@@ -126,7 +127,7 @@ export function FieldInput({
           <option value="">Unknown</option>
           {field.options.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {optionLabel(option)}
             </option>
           ))}
         </select>
@@ -142,7 +143,7 @@ export function FieldInput({
                 value={option}
                 defaultChecked={(defaultValue as string[]).includes(option)}
               />
-              {option}
+              {optionLabel(option)}
             </label>
           ))}
         </div>

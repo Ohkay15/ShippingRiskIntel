@@ -25,6 +25,8 @@ export interface WeatherAlert {
   /** Trimmed description, plain text. */
   summary: string;
   instruction: string | null;
+  /** Over-water alert (Great Lakes, coastal or offshore marine zones). */
+  marine: boolean;
   /** Polygon(s) when the NWS supplies one; zone-based alerts have none. */
   geometry: GeoJsonPolygonish | null;
 }
@@ -51,10 +53,20 @@ interface NwsFeature {
     instruction?: string | null;
     status?: string;
     messageType?: string;
+    geocode?: { UGC?: string[] };
   };
 }
 interface NwsCollection {
   features?: NwsFeature[];
+}
+
+/** NWS marine zone prefixes (Great Lakes, coastal, offshore). None is a state code. */
+const MARINE_UGC = /^(AM|AN|GM|LC|LE|LH|LM|LO|LS|PH|PK|PM|PS|PZ|SL)Z\d{3}$/;
+const MARINE_EVENTS = /gale|small craft|hazardous seas|marine|freezing spray|brisk wind|hurricane force wind|low water/i;
+
+export function isMarineAlert(event: string, ugc: string[] | undefined): boolean {
+  if (ugc && ugc.length > 0) return ugc.every((code) => MARINE_UGC.test(code));
+  return MARINE_EVENTS.test(event);
 }
 
 const SEVERITY_ORDER: AlertSeverity[] = ["Extreme", "Severe", "Moderate", "Minor", "Unknown"];
@@ -77,6 +89,7 @@ function toAlert(f: NwsFeature): WeatherAlert {
     sender: p.senderName ?? "National Weather Service",
     summary: description.length > 480 ? `${description.slice(0, 477)}…` : description,
     instruction: p.instruction ? p.instruction.replace(/\s+/g, " ").trim().slice(0, 300) : null,
+    marine: isMarineAlert(p.event ?? "", p.geocode?.UGC),
     geometry: f.geometry && (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon") ? f.geometry : null,
   };
 }
