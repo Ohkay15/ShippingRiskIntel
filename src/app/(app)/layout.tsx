@@ -1,3 +1,4 @@
+import { signInRequired } from "@/auth/mode";
 import { requireUser } from "@/auth/session";
 import { processEnv, statusCounts, visibleIntegrationReport } from "@/integrations/status";
 import { AppSidebar } from "@/ui/app-sidebar";
@@ -10,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const connected = statusCounts(visibleIntegrationReport(processEnv())).connected;
   return (
     <div className="app-shell">
-      <AppSidebar connectedCount={connected} user={{ name: user.name, email: user.email }} />
+      <AppSidebar connectedCount={connected} user={signInRequired() ? { name: user.name, email: user.email } : null} />
       <div className="app-main">{children}</div>
     </div>
   );

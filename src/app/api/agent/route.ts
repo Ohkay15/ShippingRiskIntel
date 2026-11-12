@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { runAgent } from "@/agent/runtime";
 import { getCurrentUser } from "@/auth/session";
+import { assistantLimiter, limitMessage, visitorKey } from "@/auth/usage-limit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -28,6 +29,13 @@ export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Expected { messages: [{ role, content }] }." }, { status: 422 });
+  }
+  const allowed = assistantLimiter.take(visitorKey(request.headers));
+  if (!allowed.ok) {
+    return NextResponse.json(
+      { error: limitMessage(allowed.retryAfterS) },
+      { status: 429, headers: { "Retry-After": String(allowed.retryAfterS) } }
+    );
   }
   try {
     return NextResponse.json(await runAgent(parsed.data.messages));

@@ -2,6 +2,9 @@
 
 import { requireUser } from "@/auth/session";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+
+import { extractionLimiter, limitMessage, visitorKey } from "@/auth/usage-limit";
 import { z } from "zod";
 
 import { confirmAndExtract } from "@/extraction/confirmation";
@@ -30,6 +33,9 @@ export async function confirmShipment(
     return { status: "error", message: "Missing or invalid shipment id." };
   }
   const id = parsedId.data;
+
+  const allowed = extractionLimiter.take(visitorKey(await headers()));
+  if (!allowed.ok) return { status: "error", message: limitMessage(allowed.retryAfterS) };
 
   const outcome = await confirmAndExtract(id);
 

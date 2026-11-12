@@ -86,24 +86,23 @@ themselves; the demo dataset is untouched).
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm test` | Vitest suite |
 
-## Accounts and sign-in
+## Access: open by default
 
-Every page and API route requires a signed-in user. Accounts are email and
-password, stored in the app's own Postgres (scrypt password hashes,
-database-backed sessions in an httpOnly cookie, 30 days). No third-party
-auth service or key is needed.
+The app opens straight into the workspace — no account, no sign-in. Anyone
+with the link shares one workspace (good for demos and pilots), and the
+pages are marked `noindex` so search engines skip them.
 
-- **First account = workspace owner.** After deploying, open `/sign-up`
-  right away and create your account.
-- **Teammates** join at `/sign-up` with the invite code in `SIGNUP_CODE`.
-  With no code set, sign-up is closed. `ALLOW_OPEN_SIGNUP=true` opens it to
-  anyone.
-- **Settings** (`/settings`): profile, password change (signs out other
-  devices), personal API keys for the MCP server, and the member list.
-- Sessions are verified against the database in middleware before any page
-  renders. Pages, server actions and API routes check again.
-- Repeated failed sign-ins lock the account for 15 minutes.
-- Everyone in the workspace sees the same shipments.
+Because anyone can use it, the two features that cost money per call have
+fair-use limits per visitor and overall (in memory, per server instance):
+the assistant (`ASSISTANT_LIMIT_PER_HOUR`, default 40;
+`ASSISTANT_LIMIT_GLOBAL_PER_HOUR`, default 400) and AI document extraction
+(`EXTRACTION_LIMIT_PER_HOUR`, default 15; `EXTRACTION_LIMIT_GLOBAL_PER_HOUR`,
+default 100).
+
+To require accounts again, set `REQUIRE_SIGN_IN=true` and redeploy: sign-up
+(first account becomes owner, then `SIGNUP_CODE` or `ALLOW_OPEN_SIGNUP`),
+sessions, lockout and Settings all switch back on. The MCP endpoint and the
+inbound webhook always need their keys, in either mode.
 
 ## AI models
 

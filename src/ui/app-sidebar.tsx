@@ -23,7 +23,7 @@ export function AppSidebar({
   user,
 }: {
   connectedCount: number;
-  user: { name: string; email: string };
+  user: { name: string; email: string } | null;
 }) {
   const pathname = usePathname() ?? "/";
   return (
@@ -51,6 +51,7 @@ export function AppSidebar({
         ))}
       </nav>
 
+      {user && (
       <Link
         href="/settings"
         className="sidebar-user"
@@ -65,6 +66,7 @@ export function AppSidebar({
           <span className="sidebar-user-email">{user.email}</span>
         </span>
       </Link>
+      )}
     </aside>
   );
 }
