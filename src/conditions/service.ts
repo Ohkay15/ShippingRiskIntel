@@ -15,7 +15,7 @@ import { laneNewsQuery, NETWORK_NEWS_QUERY, searchNews, type NewsItem } from "./
  */
 
 export interface SourceNote {
-  id: "openfreemap" | "nexrad" | "nws" | "gdelt" | "nominatim" | "osrm";
+  id: "openfreemap" | "nexrad" | "nws" | "gdelt" | "google_news" | "nominatim" | "osrm";
   label: string;
   url: string;
 }
@@ -25,6 +25,7 @@ export const SOURCES: Record<SourceNote["id"], SourceNote> = {
   nexrad: { id: "nexrad", label: "Radar: NOAA NEXRAD via Iowa Environmental Mesonet", url: "https://mesonet.agron.iastate.edu" },
   nws: { id: "nws", label: "Alerts: National Weather Service", url: "https://www.weather.gov" },
   gdelt: { id: "gdelt", label: "News: The GDELT Project", url: "https://www.gdeltproject.org" },
+  google_news: { id: "google_news", label: "News: Google News", url: "https://news.google.com" },
   nominatim: { id: "nominatim", label: "Places: Nominatim / OpenStreetMap", url: "https://nominatim.org" },
   osrm: { id: "osrm", label: "Roads: OSRM", url: "https://project-osrm.org" },
 };
@@ -52,6 +53,8 @@ export interface ConditionsOptions {
   env?: Record<string, string | undefined>;
   fetchImpl?: FetchLike;
   includeNews?: boolean;
+  /** Transport mode; over-water alerts only matter for ocean legs. */
+  mode?: string | null;
 }
 
 export async function routeConditions(
@@ -86,7 +89,9 @@ export async function routeConditions(
         })(),
   ]);
 
-  const alerts = alertsResult.status === "fulfilled" ? alertsResult.value : [];
+  const keepMarine = opts.mode === "ocean";
+  const alerts =
+    alertsResult.status === "fulfilled" ? alertsResult.value.filter((a) => keepMarine || !a.marine) : [];
   if (alertsResult.status === "rejected") issues.push("Weather alerts are unavailable right now.");
   const news = newsResult.status === "fulfilled" ? newsResult.value : [];
   if (newsResult.status === "rejected") issues.push("News is unavailable right now.");
@@ -94,7 +99,7 @@ export async function routeConditions(
   const radarCoverage = keyPoints.some(inNwsCoverage);
   const sources = [SOURCES.openfreemap];
   if (radarCoverage) sources.push(SOURCES.nexrad, SOURCES.nws);
-  if (opts.includeNews !== false) sources.push(SOURCES.gdelt);
+  if (opts.includeNews !== false) sources.push(news.some((n) => n.provider === "google_news") ? SOURCES.google_news : SOURCES.gdelt);
   if (route?.source === "osrm") sources.push(SOURCES.osrm);
 
   return {
@@ -164,7 +169,7 @@ export async function networkConditions(
   let alerts: WeatherAlert[] = [];
   let alertsOk = true;
   try {
-    alerts = await nationalSevereAlerts(opts);
+    alerts = (await nationalSevereAlerts(opts)).filter((a) => !a.marine);
   } catch {
     alertsOk = false;
     issues.push("Nationwide weather warnings are unavailable right now.");
@@ -197,7 +202,7 @@ export async function networkConditions(
     alertsOk,
     bounds: allPoints.length ? bbox(allPoints) : null,
     issues,
-    sources: [SOURCES.openfreemap, SOURCES.nexrad, SOURCES.nws, SOURCES.gdelt],
+    sources: [SOURCES.openfreemap, SOURCES.nexrad, SOURCES.nws],
     fetchedAt: new Date().toISOString(),
   };
 }

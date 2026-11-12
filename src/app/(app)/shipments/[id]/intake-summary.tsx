@@ -1,3 +1,4 @@
+import { optionLabel } from "@/intake/option-labels";
 import type { ShipmentIntake } from "@/schemas/shipment";
 import { FACTOR_GROUP_META, type FormFieldDef } from "@/intake/form-fields";
 
@@ -40,7 +41,8 @@ function renderValue(value: unknown, kind: FormFieldDef["kind"]): string {
   if (value == null) return "Unknown";
   if (kind === "boolean") return value === true ? "Yes" : "No";
   if (Array.isArray(value)) {
-    return value.length === 0 ? "None reported" : value.map(String).join(", ");
+    return value.length === 0 ? "None reported" : value.map((v) => optionLabel(String(v))).join(", ");
   }
+  if (kind === "enum") return optionLabel(String(value));
   return String(value);
 }
