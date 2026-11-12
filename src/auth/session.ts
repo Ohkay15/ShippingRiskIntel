@@ -6,6 +6,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { apiKeys, sessions, users } from "@/db/schema";
 import { SESSION_COOKIE, SESSION_TTL_DAYS } from "./constants";
+import { GUEST_USER, signInRequired } from "./mode";
 import { looksLikeApiKey, newToken, sha256 } from "./tokens";
 import { userForSessionToken, type SessionUser } from "./session-store";
 
@@ -35,8 +36,12 @@ export async function createSession(userId: string): Promise<void> {
   });
 }
 
-/** The signed-in user for this request, or null. Cached per request. */
+/**
+ * The signed-in user for this request, or null. Cached per request.
+ * In open mode (the default) everyone is the guest user.
+ */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  if (!signInRequired()) return GUEST_USER;
   const jar = await cookies();
   return userForSessionToken(jar.get(SESSION_COOKIE)?.value);
 });

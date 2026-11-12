@@ -40,7 +40,9 @@ export async function lanesFromDb(limit = 200): Promise<NetworkLaneInput[]> {
   return lanes;
 }
 
-export async function laneForShipment(id: string): Promise<{ origin: string | null; destination: string | null } | null> {
+export async function laneForShipment(
+  id: string
+): Promise<{ origin: string | null; destination: string | null; mode: string | null } | null> {
   const [row] = await db
     .select({ intakeData: shipments.intakeData })
     .from(shipments)
@@ -49,5 +51,6 @@ export async function laneForShipment(id: string): Promise<{ origin: string | nu
   if (!row) return null;
   const intake = shipmentIntakeSchema.safeParse(row.intakeData);
   if (!intake.success) return null;
-  return { origin: intake.data.route_lane.origin ?? null, destination: intake.data.route_lane.destination ?? null };
+  const lane = intake.data.route_lane;
+  return { origin: lane.origin ?? null, destination: lane.destination ?? null, mode: lane.mode ?? null };
 }

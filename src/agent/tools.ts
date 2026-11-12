@@ -383,7 +383,7 @@ const routeConditionsTool: AgentTool = {
   async run(input) {
     const s = await loadShipment(input.shipment_id);
     const lane = s.intake.route_lane;
-    const c = await routeConditions(lane.origin, lane.destination);
+    const c = await routeConditions(lane.origin, lane.destination, { mode: lane.mode });
     return {
       shipment: displayShipmentId(s.id),
       link: `/shipments/${s.id}#conditions`,

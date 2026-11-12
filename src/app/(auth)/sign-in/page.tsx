@@ -16,8 +16,8 @@ export default async function SignInPage({
   if (await getCurrentUser()) redirect(next);
   return (
     <>
-      <h1>Welcome back</h1>
-      <p className="auth-lead">Sign in to your workspace.</p>
+      <h1>Sign in</h1>
+      <p className="auth-lead">Score every shipment, see its coverage gap, and track conditions on the lane.</p>
       <SignInForm next={next} />
     </>
   );

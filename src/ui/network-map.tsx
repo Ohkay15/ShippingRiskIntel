@@ -149,11 +149,19 @@ export function NetworkMap() {
               ))}
             </ul>
           )}
-          <p className="conditions-sources">
-            <a href="https://www.gdeltproject.org" target="_blank" rel="noopener noreferrer">
-              News: The GDELT Project
-            </a>
-          </p>
+          {news && news.length > 0 && (
+            <p className="conditions-sources">
+              {news[0].provider === "google_news" ? (
+                <a href="https://news.google.com" target="_blank" rel="noopener noreferrer">
+                  News: Google News
+                </a>
+              ) : (
+                <a href="https://www.gdeltproject.org" target="_blank" rel="noopener noreferrer">
+                  News: The GDELT Project
+                </a>
+              )}
+            </p>
+          )}
         </section>
       </aside>
     </div>

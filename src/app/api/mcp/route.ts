@@ -24,7 +24,7 @@ async function authorized(request: Request): Promise<boolean> {
 export async function POST(request: Request) {
   if (!(await authorized(request))) {
     return NextResponse.json(
-      { error: "Unauthorized. Create a personal API key under Settings and send it as a Bearer token." },
+      { error: "Unauthorized. Send the workspace MCP key as a Bearer token." },
       { status: 401, headers: { "WWW-Authenticate": "Bearer" } }
     );
   }

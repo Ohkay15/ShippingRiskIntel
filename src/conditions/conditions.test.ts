@@ -6,8 +6,8 @@ import { lookupPlace } from "@/geo/places";
 import { laneRoute } from "@/geo/route";
 import { TtlCache, publicApiUserAgent } from "@/geo/cache";
 
-import { alertsAlongPath, inNwsCoverage, pathHitsAlert, type WeatherAlert } from "./alerts";
-import { laneNewsQuery, parseSeenDate, searchNews, setNewsSpacing } from "./news";
+import { alertsAlongPath, inNwsCoverage, isMarineAlert, pathHitsAlert, type WeatherAlert } from "./alerts";
+import { laneNewsQuery, parseNewsRss, parseSeenDate, searchNews, setNewsSpacing, toKeywordQuery } from "./news";
 import { networkConditions, routeConditions } from "./service";
 
 setNewsSpacing(0);
@@ -153,9 +153,9 @@ describe("weather alerts", () => {
 describe("news", () => {
   it("builds a GDELT query for a lane", () => {
     expect(laneNewsQuery([lookupPlace("Chicago, IL"), lookupPlace("Los Angeles, CA")])).toMatch(
-      /^\(Chicago OR "Los Angeles"\) \(freight OR .*\) sourcelang:english sourcecountry:unitedstates$/
+      /^\(Chicago OR "Los Angeles"\) \(freight OR .*\) sourcelang:english$/
     );
-    expect(laneNewsQuery([lookupPlace("Chicago, IL"), lookupPlace("Rotterdam")])).not.toContain("sourcecountry");
+    expect(toKeywordQuery('(Chicago OR Dallas) (freight OR trucking) sourcelang:english')).toBe("(Chicago OR Dallas) (freight OR trucking)");
     expect(laneNewsQuery([null, null])).toBeNull();
     expect(parseSeenDate("20260708T124500Z")).toBe("2026-07-08T12:45:00Z");
     expect(parseSeenDate("garbage")).toBeNull();
@@ -179,6 +179,50 @@ describe("news", () => {
     await searchNews("test-query-1", { fetchImpl: impl });
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toContain("mode=artlist&format=json&sort=datedesc");
+  });
+});
+
+describe("marine alerts and backup news", () => {
+  it("recognises lake and offshore alerts by zone, falling back to the event name", () => {
+    expect(isMarineAlert("Gale Warning", ["LMZ740", "LMZ742"])).toBe(true);
+    expect(isMarineAlert("Winter Storm Warning", ["ILZ014", "LMZ740"])).toBe(false);
+    expect(isMarineAlert("Small Craft Advisory", undefined)).toBe(true);
+    expect(isMarineAlert("Blizzard Warning", [])).toBe(false);
+  });
+
+  it("drops marine alerts on road lanes but keeps them for ocean legs", async () => {
+    const feature = (id: string, event: string, ugc: string[]) => ({
+      ...nwsFeature(id, event, "Moderate"),
+      properties: { ...nwsFeature(id, event, "Moderate").properties, geocode: { UGC: ugc } },
+    });
+    const { impl } = fakeFetch({
+      "api.weather.gov": () => jsonResponse({ features: [feature("m1", "Gale Warning", ["LMZ740"]), feature("l1", "Winter Weather Advisory", ["ILZ014"])] }),
+    });
+    const road = await routeConditions("Boston, MA", "Buffalo, NY", { fetchImpl: impl, env: {}, includeNews: false, mode: "road" });
+    expect(road.alerts.map((a) => a.id)).toEqual(["l1"]);
+    const sea = await routeConditions("Boston, MA", "Buffalo, NY", { fetchImpl: impl, env: {}, includeNews: false, mode: "ocean" });
+    expect(sea.alerts.map((a) => a.id).sort()).toEqual(["l1", "m1"]);
+  });
+
+  it("falls back to Google News RSS when GDELT answers with an error", async () => {
+    const rss = `<?xml version="1.0"?><rss version="2.0"><channel>
+      <item><title>I-80 reopens after pileup near Toledo - The Blade</title><link>https://news.google.com/rss/articles/abc</link>
+      <pubDate>Wed, 11 Nov 2026 18:00:00 GMT</pubDate><source url="https://www.toledoblade.com">The Blade</source></item>
+      <item><title><![CDATA[Port of Newark &amp; rail volumes climb]]></title><link>https://news.google.com/rss/articles/def</link>
+      <source url="https://www.joc.com">JOC</source></item>
+    </channel></rss>`;
+    const { impl, calls } = fakeFetch({
+      "api.gdeltproject.org": () => new Response("The specified phrase is too short.", { status: 200 }),
+      "news.google.com": () => new Response(rss, { status: 200 }),
+    });
+    const items = await searchNews("(Newark OR Toledo) (freight OR highway) sourcelang:english", { fetchImpl: impl });
+    expect(items.map((i) => [i.title, i.domain, i.provider])).toEqual([
+      ["I-80 reopens after pileup near Toledo", "The Blade", "google_news"],
+      ["Port of Newark & rail volumes climb", "JOC", "google_news"],
+    ]);
+    expect(items[0].seenAt).toBe("2026-11-11T18:00:00.000Z");
+    expect(decodeURIComponent(calls[1].url)).toContain("q=(Newark OR Toledo) (freight OR highway) when:3d");
+    expect(parseNewsRss("<rss></rss>", 5)).toEqual([]);
   });
 });
 
